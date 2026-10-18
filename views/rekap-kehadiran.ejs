@@ -1,0 +1,543 @@
+<%- include('partials/header') %>
+
+<style>
+    /* Spreadsheet table styles */
+    .attendance-table-wrapper {
+        overflow-x: auto;
+        border-radius: 16px;
+        border: 1px solid #e2e8f0;
+        background: white;
+    }
+    .attendance-table {
+        border-collapse: collapse;
+        font-size: 11px;
+        white-space: nowrap;
+        min-width: 100%;
+    }
+    .attendance-table th,
+    .attendance-table td {
+        border: 1px solid #e2e8f0;
+        padding: 4px 6px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .attendance-table thead th {
+        background: #1e3a5f;
+        color: white;
+        font-weight: 600;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .attendance-table thead th.month-header {
+        background: #1e3a5f;
+        font-size: 11px;
+    }
+    /* Sticky left columns */
+    .attendance-table th.sticky,
+    .attendance-table td.sticky {
+        position: sticky;
+        z-index: 5;
+        background: white;
+    }
+    .attendance-table thead th.sticky {
+        z-index: 15;
+        background: #1e3a5f;
+    }
+    .attendance-table th.col-no,
+    .attendance-table td.col-no { left: 0; min-width: 36px; }
+    .attendance-table th.col-nama,
+    .attendance-table td.col-nama { left: 36px; min-width: 180px; text-align: left; }
+    .attendance-table th.col-nim,
+    .attendance-table td.col-nim { left: 216px; min-width: 100px; }
+    .attendance-table th.col-mk,
+    .attendance-table td.col-mk { left: 316px; min-width: 230px; text-align: left; }
+
+    .attendance-table td.col-mk {
+        border-right: 2px solid #94a3b8;
+    }
+
+    /* Day columns */
+    .attendance-table .day-col {
+        min-width: 38px;
+        max-width: 42px;
+        font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+        font-size: 10px;
+    }
+
+    /* Color coding */
+    .cell-sunday   { background: #3b82f6 !important; color: #fff; }
+    .cell-normal   { background: #ffffff; color: #1e293b; font-weight: 600; }
+    .cell-tambahan { background: #fef08a !important; color: #854d0e; font-weight: 700; }
+    .cell-diganti  { background: #92400e !important; color: #fef3c7; font-weight: 600; }
+    .cell-pengganti{ background: #e2e8f0 !important; color: #1e293b; font-weight: 600; }
+    .cell-libur    { background: #ef4444 !important; }
+
+    /* Total columns */
+    .attendance-table .total-col {
+        min-width: 60px;
+        font-weight: 700;
+        background: #f8fafc;
+    }
+    .attendance-table thead .total-col {
+        background: #0f2942;
+    }
+    .attendance-table .total-jam-col {
+        min-width: 60px;
+        font-weight: 700;
+        background: #f1f5f9;
+        border-left: 2px solid #94a3b8;
+    }
+    .attendance-table thead .total-jam-col {
+        background: #0f2942;
+    }
+
+    /* Row separators between assistants */
+    .attendance-table tbody tr.asst-first-row td {
+        border-top: 2px solid #94a3b8;
+    }
+
+    /* Total row */
+    .attendance-table .total-row td {
+        background: #f1f5f9;
+        font-weight: 700;
+        font-size: 11px;
+        border-top: 2px solid #64748b;
+    }
+
+    /* Sticky left columns need background on hover row */
+    .attendance-table tbody tr:hover td:not([class*="cell-"]) {
+        background-color: #f8fafc;
+    }
+    .attendance-table tbody tr:hover td.cell-sunday   { background: #3b82f6 !important; }
+    .attendance-table tbody tr:hover td.cell-tambahan { background: #fbbf24 !important; }
+    .attendance-table tbody tr:hover td.cell-diganti  { background: #92400e !important; }
+    .attendance-table tbody tr:hover td.cell-pengganti{ background: #e2e8f0 !important; }
+    .attendance-table tbody tr:hover td.cell-libur    { background: #ef4444 !important; }
+</style>
+
+<div class="space-y-6">
+    <!-- Notification Banner jika Export Berhasil -->
+    <% if (exportSuccess) { %>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-fade-in">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm sm:text-base text-emerald-900">
+                        Export Berhasil Dibuat!
+                    </h4>
+                    <p class="text-xs sm:text-sm text-emerald-700">
+                        File tersimpan di: <code class="bg-emerald-100/70 px-1.5 py-0.5 rounded font-mono text-xs">V3/Export/<%= currentYear %>/</code>
+                        <% if (exportStats && exportStats.hasExports) { %>
+                            • Total: <strong><%= exportStats.totalFiles %></strong> berkas
+                            (Rekap: <%= exportStats.rekapCount %>, Berita Acara: <%= exportStats.beritaAcaraCount %>, DOCX: <%= exportStats.laporanHarianCount %>)
+                        <% } %>
+                    </p>
+                </div>
+            </div>
+            <a href="/rekap/download-exports-zip?year=<%= currentYear %>"
+               class="inline-flex items-center px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-colors shrink-0">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Unduh ZIP Sekarang
+            </a>
+        </div>
+    <% } %>
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center border border-slate-200">
+                <svg class="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">Rekap Kehadiran Bulanan</h2>
+                <p class="text-sm text-slate-500">Jam hadir asisten berdasarkan data laporan</p>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2.5">
+            <form method="GET" action="/rekap/kehadiran" class="flex flex-wrap items-center gap-2 mr-2">
+                <select name="month" class="px-3 py-2 bg-gray-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1e3a5f] focus:border-[#1e3a5f] transition-colors">
+                    <% var monthOptions = [
+                        {value: 1, label: 'Januari'}, {value: 2, label: 'Februari'}, {value: 3, label: 'Maret'},
+                        {value: 4, label: 'April'}, {value: 5, label: 'Mei'}, {value: 6, label: 'Juni'},
+                        {value: 7, label: 'Juli'}, {value: 8, label: 'Agustus'}, {value: 9, label: 'September'},
+                        {value: 10, label: 'Oktober'}, {value: 11, label: 'November'}, {value: 12, label: 'Desember'}
+                    ]; %>
+                    <% monthOptions.forEach(opt => { %>
+                        <option value="<%= opt.value %>" <%= currentMonth === opt.value ? 'selected' : '' %>>
+                            <%= opt.label %>
+                        </option>
+                    <% }) %>
+                </select>
+                <input type="number" name="year" value="<%= currentYear %>" class="w-20 px-3 py-2 bg-gray-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#1e3a5f] focus:border-[#1e3a5f] transition-colors" min="2020" max="2050">
+                
+                <!-- View Type Toggle -->
+                <select name="viewType" class="px-3 py-2 bg-purple-50 border border-purple-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors font-medium text-purple-800">
+                    <option value="angka" <%= (typeof viewType === 'undefined' || viewType === 'angka') ? 'selected' : '' %>>🔢 Tampilan Angka</option>
+                    <option value="ttd" <%= (typeof viewType !== 'undefined' && viewType === 'ttd') ? 'selected' : '' %>>✍️ Tampilan TTD</option>
+                </select>
+
+                <button type="submit" class="px-4 py-2 bg-[#1e3a5f] hover:bg-blue-900 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">
+                    Terapkan
+                </button>
+            </form>
+
+            <!-- Dropdown Menu Export -->
+            <div class="relative inline-block text-left" id="exportDropdownWrapper">
+                <button type="button" id="exportMenuButton"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl border border-blue-700 shadow-sm transition-all hover:scale-105 active:scale-95 text-sm gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    <span>Menu Export</span>
+                    <svg class="w-3.5 h-3.5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+
+                <div id="exportMenuDropdown" class="hidden absolute right-0 mt-2 w-64 rounded-2xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-50 p-2 border border-slate-100">
+                    <div class="px-3 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                        Pilihan Export (Tahun <%= currentYear %>)
+                    </div>
+                    <a href="/rekap/export-all?year=<%= currentYear %>&month=<%= currentMonth %>"
+                       onclick="triggerExportLoading(this, 'Meng-export Semua...')"
+                       class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-700 rounded-xl transition-colors">
+                        <div class="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">⚡</div>
+                        <div>
+                            <div class="font-bold">Export Semua Dokumen</div>
+                            <div class="text-[10px] text-slate-400">DOCX + Berita Acara + Rekap Kehadiran</div>
+                        </div>
+                    </a>
+                    <a href="/rekap/export-month-xlsx?month=<%= currentMonth %>&year=<%= currentYear %>&viewType=<%= typeof viewType !== 'undefined' ? viewType : 'angka' %>"
+                       onclick="triggerExportLoading(this, 'Meng-export Rekap Bulan Ini...')"
+                       class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-colors">
+                        <div class="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">📊</div>
+                        <div>
+                            <div class="font-bold">Rekap Kehadiran Bulan Ini</div>
+                            <div class="text-[10px] text-slate-400">XLSX: <%= gridData.monthInfo.monthName %> <%= currentYear %></div>
+                        </div>
+                    </a>
+                    <a href="/rekap/export-xlsx?year=<%= currentYear %>&month=<%= currentMonth %>&viewType=<%= typeof viewType !== 'undefined' ? viewType : 'angka' %>"
+                       onclick="triggerExportLoading(this, 'Meng-export Rekap Semua...')"
+                       class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition-colors">
+                        <div class="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">📑</div>
+                        <div>
+                            <div class="font-bold">Rekap Kehadiran Semua Bulan</div>
+                            <div class="text-[10px] text-slate-400">XLSX semester lengkap</div>
+                        </div>
+                    </a>
+                    <a href="/rekap/export-berita-acara?year=<%= currentYear %>&month=<%= currentMonth %>"
+                       onclick="triggerExportLoading(this, 'Meng-export Berita Acara...')"
+                       class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-xl transition-colors">
+                        <div class="w-6 h-6 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 shrink-0">📝</div>
+                        <div>
+                            <div class="font-bold">Berita Acara (XLSX)</div>
+                            <div class="text-[10px] text-slate-400">Per mata kuliah & kelas</div>
+                        </div>
+                    </a>
+                    <a href="/rekap/export-laporan-harian?year=<%= currentYear %>&month=<%= currentMonth %>"
+                       onclick="triggerExportLoading(this, 'Meng-export Laporan Harian...')"
+                       class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-amber-50 hover:text-amber-700 rounded-xl transition-colors">
+                        <div class="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">📄</div>
+                        <div>
+                            <div class="font-bold">Laporan Harian (DOCX)</div>
+                            <div class="text-[10px] text-slate-400">Arsip harian per bulan</div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <a href="/rekap/download-exports-zip?year=<%= currentYear %>"
+               class="inline-flex items-center px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl border border-slate-200 transition-colors text-sm"
+               onclick="this.classList.add('pointer-events-none', 'opacity-70'); this.innerHTML = '<svg class=\'animate-spin w-4 h-4 mr-2\' fill=\'none\' stroke=\'currentColor\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> Downloading...';">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Download ZIP
+                <% if (exportStats && exportStats.totalFiles > 0) { %>
+                    <span class="ml-1.5 px-1.5 py-0.5 text-[10px] bg-slate-200 text-slate-700 rounded-full font-bold">
+                        <%= exportStats.totalFiles %>
+                    </span>
+                <% } %>
+            </a>
+
+            <a href="/rekap" class="inline-flex items-center px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl border border-slate-200 transition-colors text-sm">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Dropdown toggle logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('exportMenuButton');
+            const menu = document.getElementById('exportMenuDropdown');
+            if (btn && menu) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    menu.classList.toggle('hidden');
+                });
+                document.addEventListener('click', function(e) {
+                    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            }
+        });
+
+        function triggerExportLoading(element, text) {
+            const btn = document.getElementById('exportMenuButton');
+            if (btn) {
+                btn.classList.add('pointer-events-none', 'opacity-75');
+                btn.innerHTML = `<svg class="animate-spin w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>${text}</span>`;
+            }
+        }
+    </script>
+
+    <!-- Month Navigation -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between">
+        <a href="/rekap/kehadiran?month=<%= prevMonth %>&year=<%= prevYear %>"
+           class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors border border-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+            Sebelumnya
+        </a>
+
+        <div class="text-center">
+            <h3 class="text-2xl font-bold text-slate-900">
+                <%= gridData.monthInfo.monthName %> <%= currentYear %>
+            </h3>
+            <p class="text-xs text-slate-500 mt-1">
+                <%= gridData.assistants.length %> asisten • <%= gridData.monthInfo.daysInMonth %> hari
+            </p>
+        </div>
+
+        <a href="/rekap/kehadiran?month=<%= nextMonth %>&year=<%= nextYear %>"
+           class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl transition-colors border border-slate-200">
+            Berikutnya
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+        </a>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="attendance-table-wrapper">
+        <table class="attendance-table">
+            <thead>
+                <!-- Row 1: Group headers -->
+                <tr>
+                    <th rowspan="2" class="sticky col-no">NO</th>
+                    <th rowspan="2" class="sticky col-nama">NAMA MAHASISWA</th>
+                    <th rowspan="2" class="sticky col-nim">NIM</th>
+                    <th rowspan="2" class="sticky col-mk">MATA KULIAH</th>
+                    <th colspan="<%= gridData.monthInfo.daysInMonth %>" class="month-header">
+                        BULAN, TANGGAL DAN JAM HADIR PELAKSANAAN (DIISI JUMLAH JAM PER HARI)
+                        <br><%= gridData.monthInfo.monthName.toUpperCase() %>
+                    </th>
+                    <th rowspan="2" class="total-col">TOTAL<br>HARI</th>
+                    <th rowspan="2" class="total-jam-col">TOTAL<br>JAM<br>HADIR</th>
+                </tr>
+                <!-- Row 2: Day numbers -->
+                <tr>
+                    <% gridData.monthInfo.days.forEach(d => { %>
+                        <th class="day-col <%= d.isSunday ? 'cell-sunday' : '' %>">
+                            <%= d.day %>
+                        </th>
+                    <% }) %>
+                </tr>
+            </thead>
+            <tbody>
+                <% /* Layout: setiap mataKuliahRow = 1 tr. NO/NAMA/NIM/TOTAL_JAM di-rowspan. TOTAL HARI per baris. */ %>
+                <% gridData.assistants.forEach((asst, idx) => {
+                    const rowCount = asst.mataKuliahRows.length || 1;
+                %>
+                    <% asst.mataKuliahRows.forEach(function(mkRow, mkIdx) { %>
+                    <tr class="<%= mkIdx === 0 ? 'asst-first-row' : '' %>">
+
+                        <% /* NO, NAMA, NIM: hanya di baris pertama, rowspan ke bawah */ %>
+                        <% if (mkIdx === 0) { %>
+                            <td class="sticky col-no font-bold text-slate-700" rowspan="<%= rowCount %>"><%= idx + 1 %></td>
+                            <td class="sticky col-nama text-slate-800 font-semibold text-xs" rowspan="<%= rowCount %>"><%= asst.nama %></td>
+                            <td class="sticky col-nim text-slate-500 text-xs" rowspan="<%= rowCount %>"><%= asst.nim %></td>
+                        <% } %>
+
+                        <% /* MATA KULIAH: satu per baris */ %>
+                        <td class="sticky col-mk text-slate-600 text-xs <%= mkRow.isTambahan ? 'text-yellow-700 font-semibold' : '' %>">
+                            <%= mkRow.name %> (<%= mkRow.kelas %>)
+                        </td>
+
+                        <% /* Kolom tanggal per matkul */ %>
+                        <% gridData.monthInfo.days.forEach(function(d) {
+                            var cell = mkRow.cells[d.date] || { jam: 0, status: 'empty' };
+                            var cellClass = 'day-col';
+                            if (cell.status === 'sunday')          cellClass += ' cell-sunday';
+                            else if (cell.status === 'normal')     cellClass += ' cell-normal';
+                            else if (cell.status === 'tambahan')   cellClass += ' cell-tambahan';
+                            else if (cell.status === 'diganti')    cellClass += ' cell-diganti';
+                            else if (cell.status === 'pengganti')  cellClass += ' cell-pengganti';
+                            else if (cell.status === 'libur')      cellClass += ' cell-libur';
+                        %>
+                            <td class="<%= cellClass %> relative group">
+                                <% if (cell.jam > 0) { %>
+                                    <% if (typeof viewType !== 'undefined' && viewType === 'ttd') { %>
+                                        <% if (asst.ttd_image) { %>
+                                            <div class="flex justify-center items-center h-full w-full">
+                                                <img src="<%= asst.ttd_image %>" alt="ttd" class="max-h-6 max-w-full object-contain" />
+                                            </div>
+                                        <% } else { %>
+                                            <span class="text-[9px] text-red-500 font-bold block" title="TTD Belum Diatur">NO TTD</span>
+                                        <% } %>
+                                    <% } else { %>
+                                        <%= formatJam(cell.jam) %>
+                                    <% } %>
+                                <% } %>
+                            </td>
+                        <% }) %>
+
+                        <% /* TOTAL HARI per matkul (tidak di-merge) */ %>
+                        <td class="total-col text-blue-700 font-bold">
+                            <%= mkRow.totalHari > 0 ? mkRow.totalHari : '' %>
+                        </td>
+
+                        <% /* TOTAL JAM: hanya di baris pertama, rowspan ke bawah */ %>
+                        <% if (mkIdx === 0) { %>
+                            <td class="total-jam-col text-slate-900 font-bold" rowspan="<%= rowCount %>">
+                                <%= asst.totalJam > 0 ? Math.round(asst.totalJam) : 0 %>
+                            </td>
+                        <% } %>
+
+                    </tr>
+                    <% }); %>
+
+                    <% /* Jika asisten tidak punya jadwal sama sekali */ %>
+                    <% if (asst.mataKuliahRows.length === 0) { %>
+                    <tr class="asst-first-row">
+                        <td class="sticky col-no font-bold text-slate-700"><%= idx + 1 %></td>
+                        <td class="sticky col-nama text-slate-800 font-semibold text-xs"><%= asst.nama %></td>
+                        <td class="sticky col-nim text-slate-500 text-xs"><%= asst.nim %></td>
+                        <td class="sticky col-mk text-slate-400 text-xs italic">Belum ada jadwal</td>
+                        <% gridData.monthInfo.days.forEach(function(d) { %>
+                            <td class="day-col <%= d.isSunday ? 'cell-sunday' : '' %>"></td>
+                        <% }) %>
+                        <td class="total-col">0</td>
+                        <td class="total-jam-col">0</td>
+                    </tr>
+                    <% } %>
+
+                <% }) %>
+
+                <!-- Total Row -->
+                <tr class="total-row">
+                    <td class="sticky col-no"></td>
+                    <td class="sticky col-nama font-bold text-slate-900">TOTAL</td>
+                    <td class="sticky col-nim"></td>
+                    <td class="sticky col-mk"></td>
+                    <% gridData.monthInfo.days.forEach(function(d) {
+                        var dayTotal = 0;
+                        gridData.assistants.forEach(function(asst) {
+                            asst.mataKuliahRows.forEach(function(mkRow) {
+                                var c = mkRow.cells[d.date];
+                                if (c && c.jam > 0) dayTotal += c.jam;
+                            });
+                        });
+                    %>
+                        <td class="day-col <%= d.isSunday ? 'cell-sunday' : '' %>">
+                            <% if (dayTotal > 0) { %><%= formatJam(dayTotal) %><% } %>
+                        </td>
+                    <% }) %>
+                    <td class="total-col text-blue-700 font-bold text-sm"><%= gridData.grandTotalHari %></td>
+                    <td class="total-jam-col text-slate-900 font-bold text-sm"><%= gridData.grandTotalJam > 0 ? Math.round(gridData.grandTotalJam) : 0 %></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Legend & Formula -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Keterangan Warna -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h4 class="font-bold text-slate-800 mb-4">Keterangan</h4>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-5 rounded bg-blue-500 border border-blue-600"></div>
+                    <span class="text-sm text-slate-600">Minggu</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-5 rounded bg-red-500 border border-red-600"></div>
+                    <span class="text-sm text-slate-600">Libur Nasional</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-5 rounded" style="background: #fef08a; border: 1px solid #fde047;"></div>
+                    <span class="text-sm text-slate-600">Menggantikan Aslab Lain (Tambahan)</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-5 rounded bg-gray-400 border border-gray-500"></div>
+                    <span class="text-sm text-slate-600">Kelas Pengganti</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-5 rounded" style="background: #92400e; border: 1px solid #78350f;"></div>
+                    <span class="text-sm text-slate-600">Diganti Aslab Lain</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Formula -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6">
+            <h4 class="font-bold text-slate-800 mb-4">Formula Perhitungan</h4>
+            <div class="space-y-4">
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <p class="text-sm font-mono text-slate-700">
+                        <span class="font-bold text-slate-900">1 SKS</span> = 50 menit
+                    </p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                    <p class="text-sm font-mono text-slate-700">
+                        <span class="font-bold text-slate-900">1 jam</span> = (SKS × 50) / 60
+                    </p>
+                </div>
+                <div class="mt-3 space-y-1">
+                    <p class="text-xs text-slate-500">Contoh:</p>
+                    <p class="text-xs text-slate-600">• 2 SKS → (2 × 50) / 60 = <strong>1.67</strong> jam</p>
+                    <p class="text-xs text-slate-600">• 3 SKS → (3 × 50) / 60 = <strong>2.50</strong> jam</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('exportSuccess')) {
+        Swal.fire({
+            title: 'Berhasil!',
+            text: 'Semua file Rekap Kehadiran untuk semester ini telah berhasil di-generate ke folder output_export/rekap_kehadiran.',
+            icon: 'success',
+            confirmButtonText: 'Oke',
+            confirmButtonColor: '#1e3a5f',
+            borderRadius: '16px'
+        });
+        
+        // Bersihkan URL dari query param agar tidak muncul lagi saat refresh
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.search.replace(/[?&]exportSuccess=true/, '').replace(/^&/, '?'));
+    }
+</script>
+
+<%- include('partials/footer') %>

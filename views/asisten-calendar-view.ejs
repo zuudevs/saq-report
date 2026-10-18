@@ -1,0 +1,291 @@
+<%- include('partials/header') %>
+
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <a href="/laporan/asisten" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali ke Pilih Kelas
+            </a>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Calendar Laporan - Kelas <%= schedule.class %></h2>
+                <p class="text-sm text-gray-600"><%= schedule.course.name %> • <%= schedule.day %> <%= schedule.time %></p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/laporan/add?schedule=<%= schedule.id %>" class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="plus"></svg>
+                Tambah Laporan Sekarang
+            </a>
+        </div>
+    </div>
+
+    <!-- Class Info Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="md:col-span-2">
+                <h3 class="text-lg font-semibold text-gray-800 mb-3">Detail Kelas</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-purple-500" data-lucide="book-open"></svg>
+                        <span class="text-gray-700"><%= schedule.course.code %> - <%= schedule.course.name %></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-purple-500" data-lucide="user"></svg>
+                        <span class="text-gray-700"><%= schedule.lecturer.name %></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-purple-500" data-lucide="clock"></svg>
+                        <span class="text-gray-700"><%= schedule.day %> • <%= schedule.time %></span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-3">PJ Asisten</h4>
+                <% if (schedule.pjAssistant) { %>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-purple-600" data-lucide="user-check"></svg>
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-800 text-sm"><%= schedule.pjAssistant.nama_asisten %></p>
+                        </div>
+                    </div>
+                <% } else { %>
+                    <p class="text-sm text-gray-500">Belum ada PJ</p>
+                <% } %>
+            </div>
+            <div>
+                <h4 class="font-semibold text-gray-800 mb-3">Asisten Aktif</h4>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-4 h-4 text-blue-600" data-lucide="users"></svg>
+                    </div>
+                    <span class="text-lg font-bold text-gray-900"><%= schedule.assistants ? schedule.assistants.length : 0 %></span>
+                    <span class="text-sm text-gray-500">orang</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Month Navigation -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center space-x-4">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <%= calendarData.monthName %> <%= calendarData.year %>
+                </h3>
+                <!-- Month quick stats -->
+                <div class="flex items-center space-x-4 text-sm">
+                    <div class="flex items-center space-x-2 bg-green-100 px-3 py-1 rounded-lg">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-green-700 font-medium">
+                            <%= calendarData.days.filter(d => d.hasReport).length %> Laporan Dibuat
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-orange-100 px-3 py-1 rounded-lg">
+                        <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span class="text-orange-700 font-medium">
+                            <%= calendarData.days.filter(d => d.isScheduleDay && !d.hasReport && !d.isPast).length %> Belum Diisi
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-purple-100 px-3 py-1 rounded-lg">
+                        <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                        <span class="text-purple-700 font-medium">
+                            <%= calendarData.days.filter(d => !d.isScheduleDay && d.hasReport).length %> Kelas Pengganti
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <a href="/laporan/asisten/kelas/<%= schedule.id %>?month=<%= currentMonth > 1 ? currentMonth - 1 : 12 %>&year=<%= currentMonth > 1 ? currentYear : currentYear - 1 %>" 
+                   class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-colors">
+                    <svg class="w-5 h-5" data-lucide="chevron-left"></svg>
+                </a>
+                <button onclick="goToCurrentMonth()" class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium rounded-lg transition-colors text-sm">
+                    Bulan Ini
+                </button>
+                <a href="/laporan/asisten/kelas/<%= schedule.id %>?month=<%= currentMonth < 12 ? currentMonth + 1 : 1 %>&year=<%= currentMonth < 12 ? currentYear : currentYear + 1 %>" 
+                   class="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 transition-colors">
+                    <svg class="w-5 h-5" data-lucide="chevron-right"></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="grid grid-cols-7 gap-2">
+            <!-- Header Days -->
+            <% const dayNames = ['Ming', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'] %>
+            <% dayNames.forEach(dayName => { %>
+                <div class="p-4 text-center text-sm font-semibold text-gray-500 bg-gray-50 rounded-lg">
+                    <%= dayName %>
+                </div>
+            <% }) %>
+
+            <!-- Empty cells for first week -->
+            <% for (let i = 0; i < calendarData.firstDay; i++) { %>
+                <div class="p-4 h-20"></div>
+            <% } %>
+
+            <!-- Calendar days -->
+            <% calendarData.days.forEach(dayData => { %>
+                <div class="relative">
+                    <% if (dayData.isScheduleDay && !dayData.hasReport) { %>
+                        <!-- Clickable day for adding report -->
+                        <a href="/laporan/add?schedule=<%= schedule.id %>&date=<%= dayData.date %>" 
+                           class="block p-4 h-20 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 hover:bg-orange-100 hover:border-orange-400 transition-all duration-200 relative">
+                            <div class="text-center">
+                                <span class="text-lg font-bold text-orange-700"><%= dayData.day %></span>
+                                <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                    <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                </div>
+                                <div class="absolute top-1 right-1">
+                                    <svg class="w-4 h-4 text-orange-600" data-lucide="plus-circle"></svg>
+                                </div>
+                            </div>
+                        </a>
+                                         <% } else if (dayData.isScheduleDay && dayData.hasReport) { %>
+                         <!-- Completed day (clickable for edit) -->
+                         <a href="/laporan/edit/<%= dayData.reportId %>" 
+                            class="block p-4 h-20 rounded-xl bg-green-100 border-2 border-green-200 hover:bg-green-200 hover:border-green-300 transition-all duration-200 relative">
+                             <div class="text-center">
+                                 <span class="text-lg font-bold text-green-700"><%= dayData.day %></span>
+                                 <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                     <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                 </div>
+                                 <div class="absolute top-1 right-1">
+                                     <svg class="w-4 h-4 text-green-600" data-lucide="edit-3"></svg>
+                                 </div>
+                             </div>
+                         </a>
+                                         <% } else if (!dayData.isScheduleDay && dayData.hasReport) { %>
+                         <!-- Non-schedule day with report (kelas pengganti completed) -->
+                         <a href="/laporan/edit/<%= dayData.reportId %>" 
+                            class="block p-4 h-20 rounded-xl bg-green-100 border-2 border-green-200 hover:bg-green-200 hover:border-green-300 transition-all duration-200 relative <%= dayData.isToday ? 'ring-2 ring-blue-300' : '' %>">
+                             <div class="text-center">
+                                 <span class="text-lg font-bold text-green-700 <%= dayData.isToday ? 'text-blue-600' : '' %>">
+                                     <%= dayData.day %>
+                                 </span>
+                                 <% if (dayData.isToday) { %>
+                                     <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                         <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                     </div>
+                                 <% } else { %>
+                                     <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                         <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                     </div>
+                                 <% } %>
+                                 <!-- Icon untuk kelas pengganti selesai -->
+                                 <div class="absolute top-1 right-1">
+                                     <svg class="w-4 h-4 text-green-600" data-lucide="edit-3"></svg>
+                                 </div>
+                             </div>
+                         </a>
+                     <% } else { %>
+                         <!-- Regular day (clickable for pengganti class) -->
+                         <a href="/laporan/add?schedule=<%= schedule.id %>&date=<%= dayData.date %>" 
+                            class="group block p-4 h-20 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 relative <%= dayData.isToday ? 'ring-2 ring-blue-300' : '' %>">
+                             <div class="text-center">
+                                 <span class="text-lg <%= dayData.isToday ? 'font-bold text-blue-600' : 'text-gray-400 hover:text-gray-600' %>">
+                                     <%= dayData.day %>
+                                 </span>
+                                 <% if (dayData.isToday) { %>
+                                     <div class="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                         <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                     </div>
+                                 <% } %>
+                                 <!-- Hover icon untuk pengganti -->
+                                 <div class="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                     <svg class="w-3 h-3 text-gray-500" data-lucide="plus"></svg>
+                                 </div>
+                             </div>
+                         </a>
+                    <% } %>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Keterangan</h3>
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+             <div class="flex items-center space-x-3">
+                 <div class="w-8 h-8 rounded-xl bg-green-100 border-2 border-green-200 flex items-center justify-center">
+                     <svg class="w-4 h-4 text-green-600" data-lucide="edit-3"></svg>
+                 </div>
+                 <div>
+                     <p class="font-medium text-gray-800">Laporan Selesai</p>
+                     <p class="text-gray-500">Klik untuk edit</p>
+                 </div>
+             </div>
+             <div class="flex items-center space-x-3">
+                 <div class="w-8 h-8 rounded-xl border-2 border-dashed border-orange-300 bg-orange-50 flex items-center justify-center">
+                     <svg class="w-4 h-4 text-orange-600" data-lucide="plus-circle"></svg>
+                 </div>
+                 <div>
+                     <p class="font-medium text-gray-800">Belum Diisi</p>
+                     <p class="text-gray-500">Hari jadwal</p>
+                 </div>
+             </div>
+             <div class="flex items-center space-x-3">
+                 <div class="w-8 h-8 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center">
+                     <svg class="w-3 h-3 text-gray-500" data-lucide="plus"></svg>
+                 </div>
+                 <div>
+                     <p class="font-medium text-gray-800">Kelas Pengganti</p>
+                     <p class="text-gray-500">Tambah laporan</p>
+                 </div>
+             </div>
+             <div class="flex items-center space-x-3">
+                 <div class="w-8 h-8 rounded-xl bg-green-100 border-2 border-green-200 flex items-center justify-center">
+                     <svg class="w-4 h-4 text-green-600" data-lucide="edit-3"></svg>
+                 </div>
+                 <div>
+                     <p class="font-medium text-gray-800">Pengganti Selesai</p>
+                     <p class="text-gray-500">Klik untuk edit</p>
+                 </div>
+             </div>
+             <div class="flex items-center space-x-3">
+                 <div class="w-8 h-8 rounded-xl bg-gray-50 border border-gray-200 ring-2 ring-blue-300 flex items-center justify-center">
+                     <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                 </div>
+                 <div>
+                     <p class="font-medium text-gray-800">Hari Ini</p>
+                     <p class="text-gray-500">Tanggal sekarang</p>
+                 </div>
+             </div>
+         </div>
+    </div>
+</div>
+
+<script>
+function goToCurrentMonth() {
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
+    window.location.href = `/laporan/asisten/kelas/<%= schedule.id %>?month=${month}&year=${year}`;
+}
+
+// Show tooltip on hover
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarDays = document.querySelectorAll('[class*="rounded-xl"]');
+    calendarDays.forEach(day => {
+        if (day.querySelector('[data-lucide="plus-circle"]')) {
+            day.title = 'Klik untuk tambah laporan (hari jadwal)';
+        } else if (day.querySelector('[data-lucide="edit-3"]')) {
+            // Check if it's green background (has report)
+            if (day.classList.contains('bg-green-100')) {
+                day.title = 'Klik untuk edit laporan yang sudah ada';
+            }
+        } else if (day.querySelector('[data-lucide="plus"]')) {
+            day.title = 'Klik untuk tambah laporan pengganti/kelas pengganti';
+        }
+    });
+});
+</script>
+
+<%- include('partials/footer') %>

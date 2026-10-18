@@ -1,0 +1,585 @@
+<%- include('partials/header') %>
+
+<div class="space-y-6 sm:space-y-8">
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 sm:p-8 border border-blue-100">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Selamat Datang di Dashboard</h2>
+                <p class="text-sm sm:text-base text-gray-600">Semester - Ringkasan data dan statistik sistem akademik</p>
+            </div>
+            <div class="hidden sm:block">
+                <div class="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/50 shadow-sm">
+                    <div class="text-xs sm:text-sm text-gray-500">Hari ini</div>
+                    <div class="text-base sm:text-lg font-semibold text-gray-900" id="currentDate"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Mata Kuliah</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900"><%= stats.totalCourses %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" data-lucide="book-open"></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs sm:text-sm">
+                <span class="text-green-600 font-medium">Aktif</span>
+                <span class="text-gray-500 ml-2">semester ini</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Dosen</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900"><%= stats.totalLecturers %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" data-lucide="user-check"></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs sm:text-sm">
+                <span class="text-green-600 font-medium">Terdaftar</span>
+                <span class="text-gray-500 ml-2">dalam sistem</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Asisten</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900"><%= stats.totalAssistants %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" data-lucide="users"></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs sm:text-sm">
+                <span class="text-green-600 font-medium">Aktif</span>
+                <span class="text-gray-500 ml-2">bertugas</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Laporan</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900"><%= stats.totalReports %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" data-lucide="file-text"></svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-xs sm:text-sm">
+                <span class="text-green-600 font-medium">Tersubmit</span>
+                <span class="text-gray-500 ml-2">semester ini</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div class="lg:col-span-2 space-y-6 sm:space-y-8">
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Progress Laporan Minggu Ini</h3>
+                        <p class="text-gray-500 text-xs sm:text-sm">Status pengisian laporan berdasarkan jadwal</p>
+                    </div>
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl px-4 py-2 border border-blue-100 w-full sm:w-auto flex items-center justify-center sm:justify-start">
+                        <span class="text-base sm:text-lg font-bold text-blue-600"><%= thisWeekStats.completionRate %>%</span>
+                        <span class="text-blue-600 text-xs sm:text-sm ml-1">Complete</span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex justify-between text-xs sm:text-sm mb-2">
+                        <span class="text-gray-600">Progress</span>
+                        <span class="text-gray-900 font-medium"><%= thisWeekStats.reportedSchedules %>/<%= thisWeekStats.totalSchedules %></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500" style="width: <%= thisWeekStats.completionRate %>%"></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div>
+                                <p class="text-green-800 font-semibold text-sm sm:text-base">Sudah Lapor</p>
+                                <p class="text-xl sm:text-2xl font-bold text-green-900"><%= thisWeekStats.reportedSchedules %></p>
+                            </div>
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-green-600 self-end sm:self-auto" data-lucide="check-circle"></svg>
+                        </div>
+                    </div>
+                    <div class="bg-orange-50 rounded-xl p-4 border border-orange-100">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                            <div>
+                                <p class="text-orange-800 font-semibold text-sm sm:text-base">Belum Lapor</p>
+                                <p class="text-xl sm:text-2xl font-bold text-orange-900"><%= thisWeekStats.pendingSchedules %></p>
+                            </div>
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-orange-600 self-end sm:self-auto" data-lucide="clock"></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Jadwal Minggu Ini Belum Diisi</h3>
+                        <p class="text-xs sm:text-sm text-gray-500 mt-1">
+                            Periode: <span class="font-medium text-blue-600"><%= pendingSchedulesThisWeek.weekRange %></span>
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <div class="bg-orange-50 rounded-lg px-3 py-2 border border-orange-100 flex items-center justify-center">
+                            <span class="text-base sm:text-lg font-bold text-orange-600"><%= pendingSchedulesThisWeek.schedules.length %></span>
+                            <span class="text-orange-600 text-xs sm:text-sm ml-1">tertunda</span>
+                        </div>
+                        <% if (pendingSchedulesThisWeek.schedules.length > 0) { %>
+                            <button
+                                id="btn-broadcast-rekap"
+                                type="button"
+                                class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs sm:text-sm font-bold rounded-xl transition-all duration-200 shadow-sm hover:shadow-md border border-emerald-500 cursor-pointer"
+                                title="Kirim seluruh daftar jadwal yang belum melapor minggu ini ke grup WhatsApp dalam satu pesan"
+                            >
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                </svg>
+                                <span>Kirim Rekap WA ke Grup</span>
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <% if (pendingSchedulesThisWeek.schedules.length > 0) { %>
+                        <% pendingSchedulesThisWeek.schedules.forEach(schedule => { %>
+                            <div class="flex flex-col sm:flex-row items-stretch gap-3">
+                                <a href="/laporan/add?schedule=<%= schedule.id %>&date=<%= schedule.expectedDate %>" class="flex-1 block">
+                                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-orange-50 rounded-xl hover:bg-orange-100 transition-all duration-200 border border-orange-100 hover:border-orange-200 hover:shadow-md group h-full gap-4">
+                                        <div class="flex items-center space-x-3 sm:space-x-4 w-full">
+                                            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors shrink-0">
+                                                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" data-lucide="plus-circle"></svg>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="font-semibold text-gray-900 group-hover:text-gray-800 text-sm sm:text-base truncate">
+                                                    <%= schedule.course ? `${schedule.course.code} - ${schedule.course.name}` : 'Unknown Course' %>
+                                                </p>
+                                                <p class="text-xs sm:text-sm text-gray-500 truncate">
+                                                    <%= schedule.lecturer ? schedule.lecturer.name : 'Unknown Lecturer' %> • 
+                                                    Kelas <%= schedule.class %>
+                                                </p>
+                                                <p class="text-xs text-blue-600 font-medium mt-0.5">
+                                                    📅 <%= schedule.formattedDate %> <span class="text-gray-400 ml-1">🕐 <%= schedule.time %></span>
+                                                </p>
+                                                <div class="flex items-center space-x-2 mt-1 truncate">
+                                                    <span class="text-[10px] sm:text-xs text-gray-500">PJ:</span>
+                                                    <span class="text-[10px] sm:text-xs font-medium text-purple-600 truncate">
+                                                        <%= schedule.pjAssistant ? schedule.pjAssistant.nama_asisten : 'Tidak ada PJ' %>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-3 shrink-0 self-start sm:self-center mt-2 sm:mt-0">
+                                            <span class="bg-orange-100 text-orange-800 px-3 py-1.5 rounded-full text-[10px] sm:text-xs font-medium group-hover:bg-orange-200 transition-colors">
+                                                ⏳ Klik untuk Isi
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+
+                                <% if (schedule.pjAssistant && schedule.pjAssistant.no_telp) { %>
+                                    <button
+                                        class="wa-remind-btn shrink-0 w-full sm:w-auto flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-1 px-4 py-3 sm:py-0 bg-green-500 hover:bg-green-600 active:scale-95 text-white text-xs sm:text-xs font-black rounded-xl transition-all duration-200 shadow-sm hover:shadow-lg border-2 border-green-400 hover:border-green-600 min-w-[80px]"
+                                        data-pj-name="<%= schedule.pjAssistant.nama_asisten %>"
+                                        data-pj-phone="<%= schedule.pjAssistant.no_telp %>"
+                                        data-course-name="<%= schedule.course ? schedule.course.name : '' %>"
+                                        data-course-code="<%= schedule.course ? schedule.course.code : '' %>"
+                                        data-class="<%= schedule.class %>"
+                                        data-day="<%= schedule.day %>"
+                                        data-time="<%= schedule.time %>"
+                                        data-date="<%= schedule.formattedDate %>"
+                                        title="Kirim reminder WA ke grup dan tag <%= schedule.pjAssistant.nama_asisten %>"
+                                    >
+                                        <svg class="w-5 h-5 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                        </svg>
+                                        <span>WA NOW</span>
+                                    </button>
+                                <% } else { %>
+                                    <div class="shrink-0 w-full sm:w-auto flex flex-row sm:flex-col items-center justify-center gap-2 sm:gap-1 px-4 py-3 bg-gray-100 text-gray-400 text-xs font-bold rounded-xl min-w-[80px] border-2 border-gray-200 cursor-not-allowed" title="Tidak ada PJ / nomor WA">
+                                        <svg class="w-5 h-5" data-lucide="message-circle-off"></svg>
+                                        <span>No PJ</span>
+                                    </div>
+                                <% } %>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="text-center py-8">
+                            <svg class="w-10 h-10 sm:w-12 sm:h-12 text-green-400 mx-auto mb-4" data-lucide="check-circle"></svg>
+                            <p class="text-green-600 font-medium text-sm sm:text-base">Semua jadwal minggu ini sudah diisi!</p>
+                            <p class="text-gray-500 text-xs sm:text-sm mt-1 px-4">
+                                Periode <%= pendingSchedulesThisWeek.weekRange %> - Tidak ada jadwal yang tertunda
+                            </p>
+                        </div>
+                    <% } %>
+                </div>
+                <div class="mt-6">
+                    <a href="/jadwal" class="inline-flex items-center text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">
+                        Kelola Semua Jadwal
+                        <svg class="w-4 h-4 ml-2" data-lucide="arrow-right"></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6 sm:space-y-8">
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm overflow-hidden">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Kalender Laporan</h3>
+                <div id="calendar" class="w-full"></div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Performa Asisten Terbaik</h3>
+                <div class="space-y-4">
+                    <% assistantPerformance.slice(0, 5).forEach((assistant, index) => { %>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-bold shrink-0">
+                                    <%= index + 1 %>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-medium text-gray-900 text-sm sm:text-base truncate"><%= assistant.nama %></p>
+                                    <p class="text-xs text-gray-500 truncate"><%= assistant.panggilan %></p>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0 ml-2">
+                                <p class="font-semibold text-gray-900 text-sm sm:text-base"><%= assistant.attendedCount %></p>
+                                <p class="text-[10px] sm:text-xs text-gray-500">laporan</p>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl p-5 sm:p-6 border border-indigo-100">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">Statistik Cepat</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-sm sm:text-base">
+                        <span class="text-gray-600">Total Jadwal</span>
+                        <span class="font-bold text-gray-900"><%= stats.totalSchedules %></span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm sm:text-base">
+                        <span class="text-gray-600">Rata-rata Asisten/Kelas</span>
+                        <span class="font-bold text-gray-900"><%= avgAssistantsPerClass %></span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm sm:text-base">
+                        <span class="text-gray-600">Laporan Minggu Ini</span>
+                        <span class="font-bold text-gray-900"><%= currentWeek.length %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Jadwal Kuliah Overview</h3>
+            <a href="/jadwal" class="text-blue-600 hover:text-blue-800 font-medium text-sm sm:text-base">Kelola Jadwal</a>
+        </div>
+        
+        <div class="overflow-x-auto pb-4 -mx-5 sm:mx-0 px-5 sm:px-0">
+            <table class="min-w-full w-full whitespace-nowrap">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Mata Kuliah</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Dosen</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Kelas</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Hari & Waktu</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Asisten</th>
+                        <th class="text-left py-3 px-4 font-semibold text-gray-900 text-sm">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% scheduleAnalysis.slice(0, 8).forEach(schedule => { %>
+                        <tr class="border-b border-gray-100 hover:bg-gray-50">
+                            <td class="py-3 px-4">
+                                <div>
+                                    <p class="font-medium text-gray-900 text-sm"><%= schedule.courseCode %></p>
+                                    <p class="text-xs text-gray-500 max-w-[200px] truncate"><%= schedule.courseName %></p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4 text-gray-600 text-sm"><%= schedule.lecturerName %></td>
+                            <td class="py-3 px-4">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs sm:text-sm font-medium">
+                                    <%= schedule.class %>
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div>
+                                    <p class="font-medium text-gray-900 text-sm"><%= schedule.day %></p>
+                                    <p class="text-xs text-gray-500"><%= schedule.time %></p>
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs sm:text-sm">
+                                    <%= schedule.assistantCount %> orang
+                                </span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <% if (thisWeekStats.reportedScheduleIds.includes(schedule.id)) { %>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-medium">
+                                        ✓ Sudah Lapor
+                                    </span>
+                                <% } else { %>
+                                    <span class="bg-orange-100 text-orange-800 px-2 py-1.5 rounded-full text-[10px] sm:text-xs font-medium">
+                                        ⏳ Belum Lapor
+                                    </span>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Set current date
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+});
+
+// ── WA NOW Button handler ──────────────────────────────────────────────────────
+document.querySelectorAll('.wa-remind-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const originalHTML = btn.innerHTML;
+        const pjName    = btn.dataset.pjName;
+        const pjPhone   = btn.dataset.pjPhone;
+        const courseName = btn.dataset.courseName;
+        const courseCode = btn.dataset.courseCode;
+        const className  = btn.dataset.class;
+        const day        = btn.dataset.day;
+        const time       = btn.dataset.time;
+        const date       = btn.dataset.date;
+
+        // Loading state
+        btn.disabled = true;
+        btn.innerHTML = `<svg class="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span class="hidden sm:inline">Sending...</span>`;
+
+        try {
+            const res = await fetch('/whatsapp/api/remind-pj', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pjName, pjPhone, courseName, courseCode, className, day, time, date })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                // Success state
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600', 'border-green-400');
+                btn.classList.add('bg-emerald-600', 'border-emerald-700');
+                btn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg><span class="hidden sm:inline">Sent!</span>`;
+                showToast(`✅ Reminder terkirim ke grup untuk @${pjName}`, 'success');
+            } else {
+                showToast(`❌ ${data.message}`, 'error');
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        } catch (err) {
+            showToast('❌ Gagal terhubung ke server.', 'error');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }
+    });
+});
+
+// Broadcast Rekap Semua Jadwal Pending ke Grup WhatsApp
+const broadcastBtn = document.getElementById('btn-broadcast-rekap');
+if (broadcastBtn) {
+    broadcastBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        if (!confirm('Kirim rekap semua jadwal yang belum melapor minggu ini ke grup WhatsApp?')) {
+            return;
+        }
+
+        const originalHTML = broadcastBtn.innerHTML;
+        broadcastBtn.disabled = true;
+        broadcastBtn.innerHTML = `<svg class="w-4 h-4 sm:w-5 sm:h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg><span>Mengirim Rekap...</span>`;
+
+        try {
+            const res = await fetch('/whatsapp/api/remind-all-pending', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(`✅ ${data.message}`, 'success');
+                broadcastBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-500');
+                broadcastBtn.classList.add('bg-blue-600', 'border-blue-700');
+                broadcastBtn.innerHTML = `<svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg><span>Rekap Terkirim!</span>`;
+
+                setTimeout(() => {
+                    broadcastBtn.innerHTML = originalHTML;
+                    broadcastBtn.disabled = false;
+                    broadcastBtn.classList.remove('bg-blue-600', 'border-blue-700');
+                    broadcastBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700', 'border-emerald-500');
+                }, 4000);
+            } else {
+                showToast(`❌ ${data.message}`, 'error');
+                broadcastBtn.innerHTML = originalHTML;
+                broadcastBtn.disabled = false;
+            }
+        } catch (err) {
+            showToast('❌ Gagal terhubung ke server.', 'error');
+            broadcastBtn.innerHTML = originalHTML;
+            broadcastBtn.disabled = false;
+        }
+    });
+}
+
+// Toast notification helper
+function showToast(message, type = 'success') {
+    const existing = document.getElementById('wa-toast');
+    if (existing) existing.remove();
+
+    const colors = type === 'success'
+        ? 'bg-emerald-600 text-white'
+        : 'bg-red-600 text-white';
+
+    const toast = document.createElement('div');
+    toast.id = 'wa-toast';
+    toast.className = `fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-[9999] px-4 sm:px-5 py-3 rounded-xl shadow-2xl text-xs sm:text-sm font-semibold transition-all duration-300 translate-y-4 opacity-0 ${colors}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+    });
+
+    setTimeout(() => {
+        toast.classList.add('translate-y-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3500);
+}
+
+// Simple calendar implementation
+function createCalendar() {
+    const calendar = document.getElementById('calendar');
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Get first day of month and number of days
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    // Create calendar header
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    
+    let calendarHTML = `
+        <div class="text-center mb-4">
+            <h4 class="text-base sm:text-lg font-semibold text-gray-900">${monthNames[currentMonth]} ${currentYear}</h4>
+        </div>
+        <div class="grid grid-cols-7 gap-1 mb-2">
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Min</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Sen</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Sel</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Rab</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Kam</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Jum</div>
+            <div class="text-center text-[10px] sm:text-xs font-medium text-gray-500 py-1 sm:py-2">Sab</div>
+        </div>
+        <div class="grid grid-cols-7 gap-1 sm:gap-1.5">
+    `;
+    
+    // Calendar data from server (simplified)
+    const reportDates = ['2025-03-01', '2025-03-02']; // Sample data for now
+    
+    // Empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+        calendarHTML += '<div class="h-6 sm:h-8"></div>';
+    }
+    
+    // Days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const hasReport = reportDates.includes(dateStr);
+        const isToday = day === now.getDate();
+        
+        let dayClass = 'h-6 sm:h-8 flex items-center justify-center text-xs sm:text-sm rounded-lg cursor-pointer hover:bg-gray-100 transition-colors';
+        
+        if (isToday) {
+            dayClass += ' bg-blue-600 text-white hover:bg-blue-700';
+        } else if (hasReport) {
+            dayClass += ' bg-green-100 text-green-800 font-semibold';
+        } else {
+            dayClass += ' text-gray-700';
+        }
+        
+        const tooltip = hasReport ? 'Ada laporan' : 'Tidak ada laporan';
+        calendarHTML += `<div class="${dayClass}" title="${tooltip}">${day}</div>`;
+    }
+    
+    calendarHTML += '</div>';
+    calendar.innerHTML = calendarHTML;
+}
+
+// Initialize calendar
+createCalendar();
+
+// Smooth animations for cards
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, observerOptions);
+
+// Observe all cards
+document.querySelectorAll('.bg-white, .bg-gradient-to-r, .bg-gradient-to-br').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(card);
+});
+
+// Add some delay to create staggered animation
+setTimeout(() => {
+    document.querySelectorAll('.bg-white, .bg-gradient-to-r, .bg-gradient-to-br').forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+}, 100);
+</script>
+
+<%- include('partials/footer') %>

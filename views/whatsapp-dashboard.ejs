@@ -1,0 +1,408 @@
+<%- include('partials/header') %>
+
+<div class="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3 sm:space-x-4 w-full md:w-auto">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" data-lucide="message-circle"></svg>
+            </div>
+            <div>
+                <h2 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 leading-tight">WhatsApp Bot</h2>
+                <p class="text-xs sm:text-sm md:text-lg text-gray-600">Kelola dan monitor bot untuk sistem laporan</p>
+            </div>
+        </div>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+            <button onclick="openChatList()" class="justify-center inline-flex items-center px-4 py-2.5 sm:py-2 bg-green-500 hover:bg-green-600 text-white text-sm sm:text-base font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="users"></svg>
+                Daftar Chats/Groups
+            </button>
+            <a href="/whatsapp/qr" class="justify-center inline-flex items-center px-4 py-2.5 sm:py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm sm:text-base font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="qr-code"></svg>
+                QR Login
+            </a>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Status Bot</p>
+                    <div class="flex items-center space-x-2 mt-1 sm:mt-2">
+                        <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full shrink-0
+                        <% if (status === 'ready') { %>bg-green-500<% } 
+                        else if (status === 'qr_ready') { %>bg-yellow-500<% } 
+                        else if (status === 'authenticated') { %>bg-blue-500<% } 
+                        else { %>bg-red-500<% } %>
+                        "></div>
+                        <span class="text-base sm:text-lg font-bold text-gray-900 truncate">
+                            <% if (status === 'ready') { %>Terhubung<% } 
+                            else if (status === 'qr_ready') { %>Menunggu QR<% } 
+                            else if (status === 'authenticated') { %>Autentikasi<% } 
+                            else { %>Terputus<% } %>
+                        </span>
+                    </div>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" data-lucide="wifi"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Laporan WA</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1"><%= totalWhatsAppReports %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-green-600" data-lucide="message-square"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Laporan Hari Ini</p>
+                    <p class="text-2xl sm:text-3xl font-bold text-gray-900 mt-1"><%= todayReports %></p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" data-lucide="calendar-days"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Uptime Bot</p>
+                    <p class="text-base sm:text-lg font-bold text-gray-900 mt-1" id="uptime">Calculating...</p>
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-xl flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" data-lucide="clock"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-full">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-6 border-b border-gray-100">
+                <h3 class="text-base sm:text-lg font-semibold text-gray-800">Laporan Terbaru via WhatsApp</h3>
+                <p class="text-xs sm:text-sm text-gray-600 mt-1">10 laporan terakhir yang diterima melalui bot</p>
+            </div>
+            
+            <div class="p-4 sm:p-6 flex-1">
+                <% if (recentReports.length > 0) { %>
+                    <div class="space-y-4">
+                        <% recentReports.forEach(report => { %>
+                            <div class="border border-gray-200 rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow">
+                                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center space-x-2 mb-2">
+                                            <% if (report.status === 'hadir') { %>
+                                                <span class="inline-flex items-center px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-800">
+                                                    <%= report.status %>
+                                                </span>
+                                                <% } else if (report.status === 'libur') { %>
+                                                    <span class="inline-flex items-center px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                        <%= report.status %>
+                                                    </span>
+                                                    <% } else if (report.status === 'pengganti') { %>
+                                                        <span class="inline-flex items-center px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-blue-100 text-blue-800">
+                                                            <%= report.status %>
+                                                        </span>
+                                                        <% } %>
+                                                        <span class="text-[10px] sm:text-xs text-gray-500">
+                                                            <%= new Date(report.receivedAt).toLocaleDateString('id-ID') %>
+                                                        </span>
+                                                    </div>
+                                                    <p class="font-medium text-gray-900 text-sm sm:text-base truncate" title="<%= report.formattedDate %>"><%= report.formattedDate %></p>
+                                                    <p class="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
+                                                        <% if (report.materi) { %>
+                                                            Materi: <%= report.materi.substring(0, 50) %><% if (report.materi.length > 50) { %>...<% } %>
+                                                            <% } else { %>
+                                                                <%= report.keterangan || 'Tidak ada detail' %>
+                                                                <% } %>
+                                                            </p>
+                                                        </div>
+                                                        <div class="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start text-xs text-gray-400 mt-2 sm:mt-0 shrink-0 border-t border-gray-100 sm:border-0 pt-2 sm:pt-0">
+                                                            <p>ID: <%= report.id %></p>
+                                                            <% if (report.imagePath) { %>
+                                                                <div class="sm:mt-2">
+                                                                    <svg class="w-4 h-4 text-green-500 inline" data-lucide="image"></svg>
+                                                                </div>
+                                                                <% } %>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <% }) %>
+                                                </div>
+                                                <% } else { %>
+                                                    <div class="text-center py-8 sm:py-12">
+                                                        <svg class="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-3 sm:mb-4" data-lucide="message-square-off"></svg>
+                                                        <p class="text-sm sm:text-base text-gray-500">Belum ada laporan yang diterima via WhatsApp</p>
+                                                        <p class="text-xs sm:text-sm text-gray-400 mt-1 sm:mt-2">Pastikan bot sudah terhubung dan asisten tahu cara mengirim laporan</p>
+                                                    </div>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="space-y-6 sm:space-y-8">
+                                                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                                                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 sm:p-6 border-b border-gray-100">
+                                                        <h3 class="text-base sm:text-lg font-semibold text-gray-800">Kontrol Bot</h3>
+                                                        <p class="text-xs sm:text-sm text-gray-600 mt-1">Kelola koneksi dan status WhatsApp bot</p>
+                                                    </div>
+                                                    
+                                                    <div class="p-4 sm:p-6 space-y-4">
+                                                        <div class="flex items-center justify-between p-3 sm:p-4 bg-gray-50 rounded-xl gap-2">
+                                                            <div class="min-w-0">
+                                                                <p class="text-sm sm:text-base font-medium text-gray-900">Status Koneksi</p>
+                                                                <p class="text-xs sm:text-sm text-gray-600 truncate">
+                                                                    <% if (status === 'ready') { %>
+                                                                        Bot terhubung & siap
+                                                                        <% } else if (status === 'qr_ready') { %>
+                                                                            Menunggu scan QR
+                                                                            <% } else { %>
+                                                                                Bot tidak terhubung
+                                                                                <% } %>
+                                                                            </p>
+                                                                        </div>
+                                                                        <button onclick="refreshStatus()" class="px-3 py-2 sm:px-4 sm:py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors shrink-0">
+                                                                            <svg class="w-4 h-4" data-lucide="refresh-cw"></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    
+                                                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                                                        <button onclick="restartBot()" class="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors flex items-center justify-center">
+                                                                            <svg class="w-4 h-4 mr-2 shrink-0" data-lucide="rotate-ccw"></svg>
+                                                                            Restart Bot
+                                                                        </button>
+                                                                        <a href="/whatsapp/qr" class="w-full px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-blue-500 hover:bg-blue-600 text-white rounded-xl transition-colors text-center flex items-center justify-center">
+                                                                            <svg class="w-4 h-4 mr-2 shrink-0" data-lucide="qr-code"></svg>
+                                                                            Login QR
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                                                                <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6 border-b border-gray-100">
+                                                                    <h3 class="text-base sm:text-lg font-semibold text-gray-800">Format Laporan WhatsApp</h3>
+                                                                    <p class="text-xs sm:text-sm text-gray-600 mt-1">Template untuk asisten mengirim laporan</p>
+                                                                </div>
+                                                                
+                                                                <div class="p-4 sm:p-6">
+                                                                    <div class="bg-gray-50 rounded-xl p-3 sm:p-4 font-mono text-xs sm:text-sm space-y-1 overflow-x-auto">
+                                                                        <p class="text-gray-800 whitespace-nowrap"><span class="text-blue-600">Hari/Tanggal:</span> Senin, 15 Juni 2024</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Mata kuliah: AP II</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Kelas: C</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Materi: Array dan String</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Deskripsi Kegiatan: Praktikum array...</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Asisten: Yuni, Dito</p>
+                                                                        <p class="text-gray-800 whitespace-nowrap">Keterangan: Lancar</p>
+                                                                        <p class="text-blue-600 text-[10px] sm:text-xs mt-2 whitespace-nowrap">* + Kirim gambar dokumentasi</p>
+                                                                    </div>
+                                                                    
+                                                                    <div class="mt-4 bg-blue-50 rounded-xl p-3 sm:p-4">
+                                                                        <h4 class="text-sm sm:text-base font-semibold text-blue-800 mb-2">📝 Format Tanggal yang Diterima:</h4>
+                                                                        <div class="space-y-1 text-xs sm:text-sm">
+                                                                            <p class="font-mono text-blue-700 break-words">• <span class="font-bold">Hari/Tanggal:</span> Senin, 15 Juni 2024</p>
+                                                                            <p class="font-mono text-blue-700 break-words">• <span class="font-bold">HARI:</span> Senin, 15 Juni 2024</p>
+                                                                            <p class="font-mono text-blue-700 break-words">• <span class="font-bold">tanggal:</span> Senin, 15 Juni 2024</p>
+                                                                            <p class="text-[10px] sm:text-xs text-blue-600 mt-2">✓ Case insensitive - huruf besar/kecil bebas</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    
+                                                                    <div class="mt-4 space-y-2">
+                                                                        <div class="flex items-start space-x-2">
+                                                                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 shrink-0"></div>
+                                                                            <span class="text-xs sm:text-sm text-gray-600">Field wajib: Tanggal, Mata kuliah, Kelas, Materi</span>
+                                                                        </div>
+                                                                        <div class="flex items-start space-x-2">
+                                                                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-yellow-500 rounded-full mt-1.5 shrink-0"></div>
+                                                                            <span class="text-xs sm:text-sm text-gray-600">Laporan libur: tambahkan "Keterangan: libur"</span>
+                                                                        </div>
+                                                                        <div class="flex items-start space-x-2">
+                                                                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 shrink-0"></div>
+                                                                            <span class="text-xs sm:text-sm text-gray-600">Kelas pengganti: tambahkan "pengganti" di keterangan</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div id="passwordModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm transition-all duration-300 opacity-0">
+                                                    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-95 opacity-0 border border-gray-100 flex flex-col max-h-full" id="modalCard">
+                                                        <div class="p-6 sm:p-8 overflow-y-auto">
+                                                            <div class="flex items-start justify-between mb-4">
+                                                                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
+                                                                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" data-lucide="lock"></svg>
+                                                                </div>
+                                                                <button onclick="closeModal()" class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all">
+                                                                    <svg class="w-5 h-5" data-lucide="x"></svg>
+                                                                </button>
+                                                            </div>
+                                                            
+                                                            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Akses Terbatas</h3>
+                                                            <p class="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Silakan masukkan password untuk melihat daftar chat dan grup WhatsApp.</p>
+                                                            
+                                                            <div class="space-y-4 sm:space-y-6">
+                                                                <div class="relative">
+                                                                    <label for="chatPassword" class="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 sm:mb-2">Password</label>
+                                                                    <div class="relative">
+                                                                        <span class="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center pointer-events-none">
+                                                                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" data-lucide="key-round"></svg>
+                                                                        </span>
+                                                                        <input type="password" id="chatPassword" 
+                                                                        class="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 bg-gray-50 border border-gray-200 rounded-xl sm:rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-base sm:text-lg tracking-widest placeholder:tracking-normal"
+                                                                        placeholder="Masukkan password">
+                                                                    </div>
+                                                                    <p id="passwordError" class="text-red-500 text-xs sm:text-sm mt-2 hidden flex items-center">
+                                                                        <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 shrink-0" data-lucide="alert-circle"></svg>
+                                                                        Password yang Anda masukkan salah.
+                                                                    </p>
+                                                                </div>
+                                                                
+                                                                <div class="flex flex-col space-y-2.5 sm:space-y-3 pt-2">
+                                                                    <button onclick="validatePassword()" 
+                                                                    class="w-full py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl sm:rounded-2xl shadow-lg shadow-blue-200 transition-all transform active:scale-[0.98] flex items-center justify-center">
+                                                                    Konfirmasi Password
+                                                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 ml-2" data-lucide="arrow-right"></svg>
+                                                                </button>
+                                                                <button onclick="closeModal()" 
+                                                                class="w-full py-2.5 sm:py-3 text-sm sm:text-base text-gray-500 hover:text-gray-800 font-medium transition-colors">
+                                                                Batal
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <style>
+                                            @keyframes modalShake {
+                                                0%, 100% { transform: translateX(0); }
+                                                25% { transform: translateX(-8px); }
+                                                75% { transform: translateX(8px); }
+                                            }
+                                            .animate-shake {
+                                                animation: modalShake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+                                            }
+                                        </style>
+                                        
+                                        <script>
+                                            function openChatList() {
+                                                const modal = document.getElementById('passwordModal');
+                                                const card = document.getElementById('modalCard');
+                                                modal.classList.remove('hidden');
+                                                // Force reflow
+                                                modal.offsetHeight;
+                                                modal.classList.add('opacity-100');
+                                                card.classList.remove('scale-95', 'opacity-0');
+                                                card.classList.add('scale-100', 'opacity-100');
+                                                
+                                                const input = document.getElementById('chatPassword');
+                                                input.value = '';
+                                                input.focus();
+                                                document.getElementById('passwordError').classList.add('hidden');
+                                                
+                                                // Refresh icons in modal
+                                                lucide.createIcons();
+                                            }
+                                            
+                                            function closeModal() {
+                                                const modal = document.getElementById('passwordModal');
+                                                const card = document.getElementById('modalCard');
+                                                card.classList.remove('scale-100', 'opacity-100');
+                                                card.classList.add('scale-95', 'opacity-0');
+                                                modal.classList.remove('opacity-100');
+                                                setTimeout(() => {
+                                                    modal.classList.add('hidden');
+                                                }, 300);
+                                            }
+                                            
+                                            function validatePassword() {
+                                                const password = document.getElementById('chatPassword').value;
+                                                if (password === '000111') {
+                                                    window.location.href = '/whatsapp/chats';
+                                                } else {
+                                                    const error = document.getElementById('passwordError');
+                                                    error.classList.remove('hidden');
+                                                    const card = document.getElementById('modalCard');
+                                                    card.classList.add('animate-shake');
+                                                    setTimeout(() => card.classList.remove('animate-shake'), 400);
+                                                    document.getElementById('chatPassword').value = '';
+                                                    document.getElementById('chatPassword').focus();
+                                                }
+                                            }
+                                            
+                                            // Add enter key listener
+                                            document.getElementById('chatPassword')?.addEventListener('keypress', (e) => {
+                                                if (e.key === 'Enter') validatePassword();
+                                            });
+                                            
+                                            async function refreshStatus() {
+                                                try {
+                                                    const response = await fetch('/api/whatsapp/status');
+                                                    const data = await response.json();
+                                                    
+                                                    // Refresh page with updated status
+                                                    setTimeout(() => {
+                                                        window.location.reload();
+                                                    }, 1000);
+                                                    
+                                                } catch (error) {
+                                                    console.error('Failed to refresh status:', error);
+                                                }
+                                            }
+                                            
+                                            async function restartBot() {
+                                                if (!confirm('Yakin ingin restart WhatsApp bot? Koneksi akan terputus sementara.')) {
+                                                    return;
+                                                }
+                                                
+                                                try {
+                                                    const response = await fetch('/whatsapp/restart', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' }
+                                                    });
+                                                    
+                                                    const result = await response.json();
+                                                    if (result.success) {
+                                                        alert('Bot berhasil direstart. Halaman akan direfresh...');
+                                                        setTimeout(() => {
+                                                            window.location.reload();
+                                                        }, 2000);
+                                                    } else {
+                                                        alert('Gagal restart bot: ' + result.error);
+                                                    }
+                                                } catch (error) {
+                                                    alert('Error: ' + error.message);
+                                                }
+                                            }
+                                            
+                                            // Update uptime
+                                            function updateUptime() {
+                                                // Simple uptime calculation (would be better to track actual start time)
+                                                const startTime = Date.now() - (Math.random() * 3600000); // Random for demo
+                                                const uptime = Date.now() - startTime;
+                                                const hours = Math.floor(uptime / 3600000);
+                                                const minutes = Math.floor((uptime % 3600000) / 60000);
+                                                const uptimeEl = document.getElementById('uptime');
+                                                if (uptimeEl) {
+                                                    uptimeEl.textContent = `${hours}h ${minutes}m`;
+                                                }
+                                            }
+                                            
+                                            document.addEventListener('DOMContentLoaded', () => {
+                                                updateUptime();
+                                                setInterval(updateUptime, 60000); // Update every minute
+                                            });
+                                        </script>
+                                        
+                                        <%- include('partials/footer') %>

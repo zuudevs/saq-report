@@ -1,0 +1,239 @@
+<%- include('partials/header') %>
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center space-x-3 mb-8">
+        <a href="/jadwal" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </a>
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">Tambah Jadwal Baru</h2>
+                <p class="text-sm text-gray-500">Isi form untuk menambahkan jadwal mata kuliah</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800">Informasi Jadwal</h3>
+            <p class="text-sm text-gray-600 mt-1">Semua field wajib diisi</p>
+        </div>
+
+        <form method="POST" action="/jadwal/add" class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Kolom Kiri -->
+                <div class="space-y-6">
+                    <!-- Mata Kuliah -->
+                    <div class="space-y-2">
+                        <label for="course_id" class="block text-sm font-semibold text-gray-700">
+                            Mata Kuliah
+                        </label>
+                        <div class="relative">
+                            <select 
+                                id="course_id" 
+                                name="course_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                                required
+                            >
+                                <option value="">Pilih Mata Kuliah</option>
+                                <% courses.forEach(course => { %>
+                                    <option value="<%= course.id %>"><%= course.name %> (<%= course.code %>)</option>
+                                <% }) %>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Pilih mata kuliah dari daftar</p>
+                    </div>
+
+                    <!-- Dosen -->
+                    <div class="space-y-2">
+                        <label for="lecturer_id" class="block text-sm font-semibold text-gray-700">
+                            Dosen Pengampu
+                        </label>
+                        <div class="relative">
+                            <select 
+                                id="lecturer_id" 
+                                name="lecturer_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                                required
+                            >
+                                <option value="">Pilih Dosen</option>
+                                <% lecturers.forEach(lecturer => { %>
+                                    <option value="<%= lecturer.id %>"><%= lecturer.name %><% if (lecturer.title) { %> - <%= lecturer.title %><% } %></option>
+                                <% }) %>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Pilih dosen pengampu mata kuliah</p>
+                    </div>
+
+                    <!-- Kelas -->
+                    <div class="space-y-2">
+                        <label for="class" class="block text-sm font-semibold text-gray-700">
+                            Kelas
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="class" 
+                                name="class" 
+                                placeholder="Contoh: A, B, C" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                                required
+                            />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Kelas mata kuliah (huruf kapital)</p>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan -->
+                <div class="space-y-6">
+                    <!-- Hari -->
+                    <div class="space-y-2">
+                        <label for="day" class="block text-sm font-semibold text-gray-700">
+                            Hari
+                        </label>
+                        <div class="relative">
+                            <select 
+                                id="day" 
+                                name="day" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                                required
+                            >
+                                <option value="">Pilih Hari</option>
+                                <option value="Senin">Senin</option>
+                                <option value="Selasa">Selasa</option>
+                                <option value="Rabu">Rabu</option>
+                                <option value="Kamis">Kamis</option>
+                                <option value="Jumat">Jumat</option>
+                                <option value="Sabtu">Sabtu</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Hari pelaksanaan mata kuliah</p>
+                    </div>
+
+                    <!-- Jam -->
+                    <div class="space-y-2">
+                        <label for="time" class="block text-sm font-semibold text-gray-700">
+                            Waktu
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="time" 
+                                name="time" 
+                                placeholder="Contoh: 13.00 - 15.30" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                                required
+                            />
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Waktu pelaksanaan mata kuliah</p>
+                    </div>
+
+                    <!-- PJ Asisten -->
+                    <div class="space-y-2">
+                        <label for="pj_assistant_id" class="block text-sm font-semibold text-gray-700">
+                            Penanggung Jawab (PJ)
+                        </label>
+                        <div class="relative">
+                            <select 
+                                id="pj_assistant_id" 
+                                name="pj_assistant_id" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                                required
+                            >
+                                <option value="">Pilih PJ Asisten</option>
+                                <% assistants.forEach(assistant => { %>
+                                    <option value="<%= assistant.id %>"><%= assistant.panggilan %> (<%= assistant.nama_asisten %>)</option>
+                                <% }) %>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500">Asisten penanggung jawab</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tim Asisten -->
+            <div class="mt-8 space-y-2">
+                <label class="block text-sm font-semibold text-gray-700">
+                    Tim Asisten
+                </label>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4 bg-gray-50 rounded-xl">
+                    <% assistants.forEach(assistant => { %>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                name="assistant_ids" 
+                                value="<%= assistant.id %>" 
+                                class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                            />
+                            <span class="text-sm text-gray-700"><%= assistant.panggilan %></span>
+                        </label>
+                    <% }) %>
+                </div>
+                <p class="text-xs text-gray-500">Pilih asisten yang bertugas (bisa lebih dari satu)</p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-8 border-t border-gray-100 mt-8">
+                <button 
+                    type="submit" 
+                    class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Simpan Jadwal
+                </button>
+                <a 
+                    href="/jadwal" 
+                    class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Batal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

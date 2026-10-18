@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    
+    <!-- MENGGUNAKAN TAILWIND CSS VIA CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .sidebar { 
+            width: 320px; 
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed { 
+            width: 80px; 
+        }
+        
+        /* Improved sidebar content handling */
+        .sidebar-content {
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed .sidebar-content {
+            display: none; /* Changed from opacity to display for better positioning */
+        }
+        
+        /* Sidebar mini positioning */
+        .sidebar-mini {
+            display: none; /* Hidden by default */
+            transition: all 0.3s ease;
+        }
+        .sidebar.collapsed .sidebar-mini {
+            display: block; /* Show when collapsed */
+        }
+        
+        /* Improved logo container */
+        .logo-container {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .logo-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.4), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+        }
+        .logo-container:hover::after {
+            transform: translateX(100%);
+        }
+
+        /* Sidebar collapsed adjustment - Stack logo and btn vertically */
+        .sidebar.collapsed .sidebar-header {
+            flex-direction: column;
+            gap: 1.25rem;
+            padding: 1.5rem 0.5rem;
+            align-items: center;
+        }
+        .sidebar.collapsed .sidebar-header .sidebar-mini {
+            display: flex;
+            justify-content: center;
+        }
+        .sidebar.collapsed #collapseBtn {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .beautiful-shadow {
+            box-shadow: 0px 0px 0px 1px rgba(0,0,0,0.06), 0px 1px 1px -0.5px rgba(0,0,0,0.06), 0px 3px 3px -1.5px rgba(0,0,0,0.06), 0px 6px 6px -3px rgba(0,0,0,0.06), 0px 12px 12px -6px rgba(0,0,0,0.06), 0px 24px 24px -12px rgba(0,0,0,0.06);
+        }
+        .main-content {
+            margin-left: 320px;
+            transition: all 0.3s ease;
+        }
+        .main-content.sidebar-collapsed {
+            margin-left: 80px;
+        }
+        @media (max-width: 1024px) {
+            .main-content, .main-content.sidebar-collapsed {
+                margin-left: 0;
+            }
+        }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+        .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen text-gray-800 font-sans">
+    
+    <!-- Desktop/Tablet Sidebar -->
+    <aside id="sidebar" class="sidebar beautiful-shadow overflow-hidden bg-white border-slate-200 fixed left-0 top-0 h-full z-50 hidden lg:block">
+        <!-- Workspace header -->
+        <div class="sidebar-header flex items-center justify-between border-slate-100 border-b p-5 transition-all duration-300">
+            <!-- Normal Branding -->
+            <div class="sidebar-content flex items-center gap-3 group translate-x-0 transition-transform">
+                <div class="logo-container w-12 h-12 rounded-2xl flex items-center justify-center p-2.5 beautiful-shadow transition-all group-hover:scale-105">
+                    <img src="/assets/SAQ.webp" alt="SAQ Logo" class="w-full h-full object-contain">
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-lg font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-purple-800 bg-clip-text text-transparent">SAQ</span>
+                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] -mt-1">Reports System</span>
+                </div>
+            </div>
+            
+            <!-- Mini Logo (Visible only when collapsed) -->
+            <div class="sidebar-mini hidden opacity-0 transition-opacity duration-300">
+                <div class="logo-container w-12 h-12 rounded-2xl flex items-center justify-center p-2.5 beautiful-shadow">
+                    <img src="/assets/SAQ.webp" alt="SAQ Logo" class="w-full h-full object-contain">
+                </div>
+            </div>
+            
+            <!-- Collapse button -->
+            <button id="collapseBtn" class="flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-400 hover:text-indigo-600 hover:bg-white hover:border-indigo-200 transition-all duration-200 shadow-sm hover:shadow-md" title="Toggle Sidebar">
+                <svg class="w-4 h-4" data-lucide="panel-left-close"></svg>
+            </button>
+        </div>
+
+
+        <!-- Navigation Container -->
+        <div class="nav-container relative">
+            <!-- Full Navigation (normal state) -->
+            <nav class="sidebar-content select-none text-sm pt-6 pr-2 pl-2">
+                <!-- Main Navigation -->
+                <div class="space-y-1">
+                    <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'dashboard' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="layout-dashboard"></svg>
+                        <span class="font-medium">Dashboard</span>
+                    </a>
+                    <a href="/laporan" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'laporan' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="file-text"></svg>
+                        <span class="font-medium">Laporan</span>
+                    </a>
+                    <a href="/jadwal" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'jadwal' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="calendar"></svg>
+                        <span class="font-medium">Jadwal Kuliah</span>
+                    </a>
+                    <a href="/dosen" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'dosen' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="users"></svg>
+                        <span class="font-medium">Data Dosen</span>
+                    </a>
+                    <a href="/matakuliah" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'matakuliah' ? 'bg-gradient-to-tl from-emerald-400 to-teal-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="book-open"></svg>
+                        <span class="font-medium">Mata Kuliah</span>
+                    </a>
+                    <a href="/asisten" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'asisten' ? 'bg-gradient-to-tl from-purple-400 to-violet-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="user-check"></svg>
+                        <span class="font-medium">Data Asisten</span>
+                    </a>
+                    <a href="/rekap" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'rekap' ? 'bg-gradient-to-tl from-green-400 to-emerald-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="calculator"></svg>
+                        <span class="font-medium">Rekap Bendahara</span>
+                    </a>
+                    <a href="/whatsapp" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'whatsapp' ? 'bg-gradient-to-tl from-blue-400 to-cyan-500 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="message-circle"></svg>
+                        <span class="font-medium">WhatsApp Bot</span>
+                    </a>
+                    <a href="/settings" class="flex items-center gap-3 px-4 py-3 mx-2 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors <%= activePage === 'settings' ? 'bg-gradient-to-tl from-slate-700 to-slate-900 text-white beautiful-shadow' : '' %>">
+                        <svg class="w-5 h-5" data-lucide="settings"></svg>
+                        <span class="font-medium">Pengaturan</span>
+                    </a>
+                </div>
+
+                <!-- Management Section -->
+                <!-- Quick Actions -->
+<!-- 
+                <div class="px-4 mt-6">
+                    <button id="managementToggle" class="flex items-center gap-2 w-full text-slate-500 uppercase text-xs tracking-wider font-semibold mb-3">
+                        <svg class="w-4 h-4 transition-transform" data-lucide="chevron-down"></svg>
+                        Manajemen Data
+                    </button>
+
+                    <div id="managementList" class="space-y-1">
+                        <a href="/mahasiswa" class="block pl-6 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" data-lucide="users"></svg>
+                                Data Mahasiswa
+                            </span>
+                        </a>
+                        <a href="/semester" class="block pl-6 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" data-lucide="calendar-days"></svg>
+                                Semester
+                            </span>
+                        </a>
+                        <a href="/ruangan" class="block pl-6 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
+                            <span class="flex items-center gap-2">
+                                <svg class="w-4 h-4" data-lucide="building"></svg>
+                                Ruangan
+                            </span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="px-4 mt-6 pb-6">
+                    <p class="text-slate-500 uppercase text-xs tracking-wider font-semibold mb-3">Aksi Cepat</p>
+                    <div class="space-y-1">
+                        <button class="flex items-center gap-3 w-full px-4 py-2.5 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                            <svg class="w-4 h-4" data-lucide="plus"></svg>
+                            <span>Tambah Data</span>
+                        </button>
+                        <button class="flex items-center gap-3 w-full px-4 py-2.5 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors">
+                            <svg class="w-4 h-4" data-lucide="download"></svg>
+                            <span>Export Data</span>
+                        </button>
+                        <button class="flex items-center gap-3 w-full px-4 py-2.5 text-slate-700 hover:bg-slate-100 rounded-xl transition-colors relative">
+                            <svg class="w-4 h-4" data-lucide="bell"></svg>
+                            <span>Notifikasi</span>
+                            <span class="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500"></span>
+                        </button>
+                    </div>
+                </div> -->
+            </nav>
+
+            <!-- Mini Navigation (collapsed state) -->
+            <nav class="sidebar-mini nav-collapsed select-none text-sm">
+                <div class="space-y-2 px-2">
+                    <a href="/dashboard" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'dashboard' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Dashboard">
+                        <svg class="w-5 h-5" data-lucide="layout-dashboard"></svg>
+                    </a>
+                    <a href="/laporan" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'laporan' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Laporan">
+                        <svg class="w-5 h-5" data-lucide="file-text"></svg>
+                    </a>
+                    <a href="/jadwal" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'jadwal' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Jadwal Kuliah">
+                        <svg class="w-5 h-5" data-lucide="calendar"></svg>
+                    </a>
+                    <a href="/dosen" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'dosen' ? 'bg-gradient-to-tl from-blue-400 to-indigo-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Data Dosen">
+                        <svg class="w-5 h-5" data-lucide="users"></svg>
+                    </a>
+                    <a href="/matakuliah" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'matakuliah' ? 'bg-gradient-to-tl from-emerald-400 to-teal-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Mata Kuliah">
+                        <svg class="w-5 h-5" data-lucide="book-open"></svg>
+                    </a>
+                    <a href="/asisten" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'asisten' ? 'bg-gradient-to-tl from-purple-400 to-violet-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Data Asisten">
+                        <svg class="w-5 h-5" data-lucide="user-check"></svg>
+                    </a>
+                    <a href="/rekap" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'rekap' ? 'bg-gradient-to-tl from-green-400 to-emerald-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Rekap Bendahara">
+                        <svg class="w-5 h-5" data-lucide="calculator"></svg>
+                    </a>
+                    <a href="/whatsapp" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'whatsapp' ? 'bg-gradient-to-tl from-blue-400 to-cyan-500 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="WhatsApp Bot">
+                        <svg class="w-5 h-5" data-lucide="message-circle"></svg>
+                    </a>
+                    <a href="/settings" class="flex items-center justify-center p-3 rounded-xl transition-colors <%= activePage === 'settings' ? 'bg-gradient-to-tl from-slate-700 to-slate-900 text-white beautiful-shadow' : 'text-slate-700 hover:bg-slate-100' %>" title="Pengaturan Global">
+                        <svg class="w-5 h-5" data-lucide="settings"></svg>
+                    </a>
+                    
+                    <!-- Mini divider -->
+                    <div class="border-t border-slate-200 my-4 mx-2"></div>
+                    
+                    <!-- Quick action icons for collapsed -->
+                    <!-- <button class="flex items-center justify-center p-3 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors" title="Tambah Data">
+                        <svg class="w-4 h-4" data-lucide="plus"></svg>
+                    </button>
+                    <button class="flex items-center justify-center p-3 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors" title="Export Data">
+                        <svg class="w-4 h-4" data-lucide="download"></svg>
+                    </button>
+                    <button class="flex items-center justify-center p-3 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors relative" title="Notifikasi">
+                        <svg class="w-4 h-4" data-lucide="bell"></svg>
+                        <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500"></span>
+                    </button> -->
+                </div>
+            </nav>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden bg-white/95 backdrop-blur-sm shadow-lg border-b border-gray-200/50 sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo/Brand -->
+                <div class="flex items-center space-x-3">
+                    <img src="/assets/SAQ.webp" alt="SAQ Logo" class="w-10 h-10 rounded-xl shadow-lg object-contain">
+                    <div>
+                        <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-800 bg-clip-text text-transparent">
+                            SAQ
+                        </h1>
+                    </div>
+                </div>
+                
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="p-2 rounded-lg text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                    <svg class="w-6 h-6" data-lucide="menu"></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobileMenuOverlay" class="lg:hidden fixed inset-0 bg-black/50 z-50 hidden">
+        <div id="mobileMenu" class="fixed right-0 top-0 h-full w-80 bg-white shadow-xl transform translate-x-full transition-transform duration-300">
+            <div class="p-5 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-gray-800">Menu Navigasi</h2>
+                    <button id="closeMobileMenu" class="p-2 rounded-lg text-gray-600 hover:bg-gray-100">
+                        <svg class="w-5 h-5" data-lucide="x"></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <nav class="p-4 space-y-2 scroll-hide overflow-y-auto h-full">
+                <a href="/dashboard" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'dashboard' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="layout-dashboard"></svg>
+                    <span class="font-medium">Dashboard</span>
+                </a>
+                <a href="/laporan" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'laporan' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="file-text"></svg>
+                    <span class="font-medium">Laporan</span>
+                </a>
+                <a href="/jadwal" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'jadwal' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="calendar"></svg>
+                    <span class="font-medium">Jadwal Kuliah</span>
+                </a>
+                <a href="/dosen" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'dosen' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="users"></svg>
+                    <span class="font-medium">Data Dosen</span>
+                </a>
+                <a href="/matakuliah" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'matakuliah' ? 'bg-emerald-100 text-emerald-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="book-open"></svg>
+                    <span class="font-medium">Mata Kuliah</span>
+                </a>
+                <a href="/asisten" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'asisten' ? 'bg-purple-100 text-purple-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="user-check"></svg>
+                    <span class="font-medium">Data Asisten</span>
+                </a>
+                <a href="/rekap" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'rekap' ? 'bg-green-100 text-green-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="calculator"></svg>
+                    <span class="font-medium">Rekap Bendahara</span>
+                </a>
+                <a href="/whatsapp" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'whatsapp' ? 'bg-blue-100 text-blue-700' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="message-circle"></svg>
+                    <span class="font-medium">WhatsApp Bot</span>
+                </a>
+                <a href="/settings" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors <%= activePage === 'settings' ? 'bg-slate-200 text-slate-900 font-bold' : 'text-gray-700 hover:bg-gray-100' %>">
+                    <svg class="w-5 h-5" data-lucide="settings"></svg>
+                    <span class="font-medium">Pengaturan</span>
+                </a>
+                
+                <hr class="my-4 border-gray-200">
+                
+                <div class="px-2">
+                    <p class="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-2">Manajemen</p>
+                    <a href="/mahasiswa" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-gray-600 hover:bg-gray-100">
+                        <svg class="w-4 h-4" data-lucide="users"></svg>
+                        <span>Data Mahasiswa</span>
+                    </a>
+                    <a href="/semester" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-gray-600 hover:bg-gray-100">
+                        <svg class="w-4 h-4" data-lucide="calendar-days"></svg>
+                        <span>Semester</span>
+                    </a>
+                    <a href="/ruangan" class="flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-gray-600 hover:bg-gray-100">
+                        <svg class="w-4 h-4" data-lucide="building"></svg>
+                        <span>Ruangan</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="p-4 border-t border-gray-200 mt-4">
+                <div class="space-y-2">
+                    <button class="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-xl transition-colors">
+                        <svg class="w-4 h-4" data-lucide="settings"></svg>
+                        <span>Pengaturan</span>
+                    </button>
+                    <button class="flex items-center gap-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors">
+                        <svg class="w-4 h-4" data-lucide="log-out"></svg>
+                        <span>Keluar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <main id="mainContent" class="main-content min-h-screen">
+        <div class="container mx-auto px-4 lg:px-8 py-8">
+            <div class="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 p-6 lg:p-8">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent mb-2">
+                            <%= title %>
+                        </h1>
+                        <div class="w-20 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"></div>
+                    </div>
+                    <div class="hidden lg:flex items-center space-x-2 text-sm text-gray-500">
+                        <svg class="w-4 h-4" data-lucide="clock"></svg>
+                        <span id="currentTime"></span>
+                    </div>
+                </div>
+                
+                <!-- Content Area -->
+                <div class="space-y-6">
+
+<script>
+// Initialize Lucide icons
+lucide.createIcons();
+
+// Cookie helper functions
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/';
+}
+
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// Enhanced Sidebar collapse functionality
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('mainContent');
+const collapseBtn = document.getElementById('collapseBtn');
+
+// Check saved state from cookies on page load
+const savedState = getCookie('sidebarCollapsed');
+if (savedState === 'true') {
+    sidebar.classList.add('collapsed');
+    mainContent.classList.add('sidebar-collapsed');
+    updateCollapseIcon(true);
+}
+
+function toggleSidebar() {
+    const isCollapsed = sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('sidebar-collapsed');
+    
+    // Smooth transition for logo visibility
+    const miniLogo = sidebar.querySelector('.sidebar-mini');
+    const fullContent = sidebar.querySelectorAll('.sidebar-content');
+    
+    if (isCollapsed) {
+        miniLogo.classList.remove('hidden');
+        setTimeout(() => miniLogo.classList.add('opacity-100'), 10);
+    } else {
+        miniLogo.classList.remove('opacity-100');
+        setTimeout(() => miniLogo.classList.add('hidden'), 300);
+    }
+
+    // Save state to cookies for 30 days
+    setCookie('sidebarCollapsed', isCollapsed, 30);
+    
+    // Update button icon and title
+    updateCollapseIcon(isCollapsed);
+    
+    // Force icon re-render after transition
+    setTimeout(() => {
+        lucide.createIcons();
+    }, 300);
+}
+
+function updateCollapseIcon(isCollapsed) {
+    const icon = collapseBtn.querySelector('svg');
+    const iconName = isCollapsed ? 'panel-left-open' : 'panel-left-close';
+    const title = isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar';
+    
+    icon.setAttribute('data-lucide', iconName);
+    collapseBtn.setAttribute('title', title);
+    
+    // Immediately update the icon
+    lucide.createIcons();
+}
+
+// Add event listener to collapse button
+if (collapseBtn) {
+    collapseBtn.addEventListener('click', toggleSidebar);
+}
+
+// Workspace dropdown functionality removed as it's replaced by static logo
+
+// Management accordion
+const managementToggle = document.getElementById('managementToggle');
+const managementList = document.getElementById('managementList');
+
+if (managementToggle && managementList) {
+    const icon = managementToggle.querySelector('[data-lucide="chevron-down"]');
+    managementToggle.addEventListener('click', () => {
+        managementList.classList.toggle('hidden');
+        if (icon) icon.classList.toggle('rotate-180');
+    });
+}
+
+// Mobile menu functionality
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+const mobileMenu = document.getElementById('mobileMenu');
+const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+function openMobileMenu() {
+    mobileMenuOverlay.classList.remove('hidden');
+    setTimeout(() => {
+        mobileMenu.classList.remove('translate-x-full');
+    }, 10);
+}
+
+function closeMobileMenuFunc() {
+    mobileMenu.classList.add('translate-x-full');
+    setTimeout(() => {
+        mobileMenuOverlay.classList.add('hidden');
+    }, 300);
+}
+
+mobileMenuBtn.addEventListener('click', openMobileMenu);
+closeMobileMenu.addEventListener('click', closeMobileMenuFunc);
+mobileMenuOverlay.addEventListener('click', (e) => {
+    if (e.target === mobileMenuOverlay) {
+        closeMobileMenuFunc();
+    }
+});
+
+// Update current time
+function updateTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    const timeElement = document.getElementById('currentTime');
+    if (timeElement) {
+        timeElement.textContent = timeString;
+    }
+}
+
+updateTime();
+setInterval(updateTime, 1000);
+</script>
+</code_block_to_apply_changes_from>
+</rewritten_file>

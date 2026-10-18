@@ -1,0 +1,295 @@
+<%- include('partials/header') %>
+
+<div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <a href="/rekap" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Kembali ke Rekap
+            </a>
+            <div>
+                <h2 class="text-2xl font-bold text-gray-800">Rekap Laporan Kelas</h2>
+                <p class="text-sm text-gray-600">Monitoring frekuensi laporan dan tingkat kehadiran per kelas</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button class="inline-flex items-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="download"></svg>
+                Export Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-600" data-lucide="calendar"></svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900"><%= totalKelas %></p>
+                    <p class="text-sm text-gray-500">Total Kelas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" data-lucide="file-text"></svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900"><%= totalLaporanKeseluruhan %></p>
+                    <p class="text-sm text-gray-500">Total Laporan</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-orange-600" data-lucide="trending-up"></svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">
+                        <%= rekapKelas.length > 0 ? (totalLaporanKeseluruhan / totalKelas).toFixed(1) : 0 %>
+                    </p>
+                    <p class="text-sm text-gray-500">Rata-rata per Kelas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600" data-lucide="star"></svg>
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">
+                        <%= rekapKelas.length > 0 ? rekapKelas[0].totalLaporan : 0 %>
+                    </p>
+                    <p class="text-sm text-gray-500">Laporan Terbanyak</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kelas List -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 border-b border-gray-100">
+            <h3 class="text-lg font-semibold text-gray-800">Detail Laporan Per Kelas</h3>
+            <p class="text-sm text-gray-600 mt-1">Ranking berdasarkan total laporan yang dibuat</p>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Kelas</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Laporan</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Tingkat Kehadiran</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Status Breakdown</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Laporan Terakhir</th>
+                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Detail</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <% rekapKelas.forEach((kelas, index) => { %>
+                        <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <!-- Kelas Info -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                                        <span class="text-blue-600 font-bold text-lg">
+                                            <%= kelas.class %>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">
+                                            <%= kelas.course ? kelas.course.code : 'N/A' %> - Kelas <%= kelas.class %>
+                                        </p>
+                                        <p class="text-sm text-gray-500">
+                                            <%= kelas.course ? kelas.course.name : 'Unknown Course' %>
+                                        </p>
+                                        <p class="text-xs text-gray-500">
+                                            <%= kelas.lecturer ? kelas.lecturer.name : 'Unknown Lecturer' %> • <%= kelas.day %> <%= kelas.time %>
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Total Laporan -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="space-y-1">
+                                    <span class="text-2xl font-bold text-blue-600"><%= kelas.totalLaporan %></span>
+                                    <p class="text-xs text-gray-500">laporan</p>
+                                    <p class="text-xs text-green-600 font-medium">
+                                        <%= kelas.pertemuanEfektif %> efektif
+                                    </p>
+                                </div>
+                            </td>
+
+                            <!-- Tingkat Kehadiran -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="space-y-2">
+                                    <div class="relative">
+                                        <div class="w-16 h-16 mx-auto">
+                                            <svg class="w-16 h-16 transform -rotate-90">
+                                                <circle cx="32" cy="32" r="28" stroke="#e5e7eb" stroke-width="4" fill="none"/>
+                                                <circle cx="32" cy="32" r="28" stroke="#10b981" stroke-width="4" fill="none"
+                                                    stroke-dasharray="<%= 2 * Math.PI * 28 %>" 
+                                                    stroke-dashoffset="<%= 2 * Math.PI * 28 * (1 - kelas.tingkatKehadiran / 100) %>"/>
+                                            </svg>
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <span class="text-sm font-bold text-gray-900">
+                                                    <%= kelas.tingkatKehadiran %>%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- Status Breakdown -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="space-y-1">
+                                    <% if (kelas.statusBreakdown.hadir > 0) { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <%= kelas.statusBreakdown.hadir %> Hadir
+                                        </span>
+                                    <% } %>
+                                    <% if (kelas.statusBreakdown.pengganti > 0) { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <%= kelas.statusBreakdown.pengganti %> Pengganti
+                                        </span>
+                                    <% } %>
+                                    <% if (kelas.statusBreakdown.libur > 0) { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                            <%= kelas.statusBreakdown.libur %> Libur
+                                        </span>
+                                    <% } %>
+                                    <% if (kelas.statusBreakdown.belumAdaLaporan > 0) { %>
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            <%= kelas.statusBreakdown.belumAdaLaporan %> Belum Lapor
+                                        </span>
+                                    <% } %>
+                                </div>
+                            </td>
+
+                            <!-- Laporan Terakhir -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="space-y-1">
+                                    <% if (kelas.latestReportDate) { %>
+                                        <p class="text-sm font-medium text-gray-900">
+                                            <%= kelas.latestReportFormatted %>
+                                        </p>
+                                        <% 
+                                        const daysSince = Math.floor((new Date() - new Date(kelas.latestReportDate)) / (1000 * 60 * 60 * 24));
+                                        let daysClass = 'text-green-600';
+                                        if (daysSince > 14) daysClass = 'text-red-600';
+                                        else if (daysSince > 7) daysClass = 'text-yellow-600';
+                                        %>
+                                        <p class="text-xs <%= daysClass %> font-medium">
+                                            <%= daysSince %> hari yang lalu
+                                        </p>
+                                    <% } else { %>
+                                        <p class="text-sm text-gray-500">Belum ada laporan</p>
+                                    <% } %>
+                                </div>
+                            </td>
+
+                            <!-- Detail Button -->
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <button onclick="toggleClassDetail('<%= kelas.id %>')" class="inline-flex items-center px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-lg transition-colors duration-200">
+                                    <svg class="w-4 h-4 mr-1" data-lucide="eye"></svg>
+                                    Detail
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Detail Row (Hidden by default) -->
+                        <tr id="class-detail-<%= kelas.id %>" class="hidden bg-gray-50">
+                            <td colspan="6" class="px-6 py-4">
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h4 class="font-semibold text-gray-800">
+                                            Detail Pertemuan - <%= kelas.course ? kelas.course.code : 'N/A' %> Kelas <%= kelas.class %>
+                                        </h4>
+                                        <div class="text-sm text-gray-500">
+                                            Total SKS Generated: <span class="font-semibold text-purple-600"><%= kelas.totalSKSGenerated %></span>
+                                        </div>
+                                    </div>
+                                    
+                                    <% if (kelas.detailLaporan.length > 0) { %>
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full text-sm">
+                                                <thead class="bg-gray-100">
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left font-semibold text-gray-600">Tanggal</th>
+                                                        <th class="px-3 py-2 text-center font-semibold text-gray-600">Status</th>
+                                                        <th class="px-3 py-2 text-left font-semibold text-gray-600">Materi</th>
+                                                        <th class="px-3 py-2 text-center font-semibold text-gray-600">Asisten Hadir</th>
+                                                        <th class="px-3 py-2 text-left font-semibold text-gray-600">Keterangan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-200">
+                                                    <% kelas.detailLaporan.forEach(laporan => { %>
+                                                        <tr>
+                                                            <td class="px-3 py-2 text-gray-900">
+                                                                <%= laporan.tanggalFormatted %>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-center">
+                                                                <% 
+                                                                let statusClass = 'bg-gray-100 text-gray-700';
+                                                                if (laporan.status === 'hadir') statusClass = 'bg-green-100 text-green-800';
+                                                                else if (laporan.status === 'pengganti') statusClass = 'bg-blue-100 text-blue-800';
+                                                                else if (laporan.status === 'libur') statusClass = 'bg-yellow-100 text-yellow-800';
+                                                                else if (laporan.status === 'belum ada laporan') statusClass = 'bg-red-100 text-red-800';
+                                                                %>
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= statusClass %>">
+                                                                    <%= laporan.status %>
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-gray-900">
+                                                                <%= laporan.materi || '-' %>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-center">
+                                                                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-medium">
+                                                                    <%= laporan.jumlahAsisten %> orang
+                                                                </span>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-gray-900 max-w-xs">
+                                                                <div class="truncate" title="<%= laporan.keterangan %>">
+                                                                    <%= laporan.keterangan || '-' %>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    <% }) %>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    <% } else { %>
+                                        <p class="text-gray-500 text-center py-4">Belum ada laporan tercatat</p>
+                                    <% } %>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleClassDetail(classId) {
+    const detailRow = document.getElementById(`class-detail-${classId}`);
+    detailRow.classList.toggle('hidden');
+}
+</script>
+
+<%- include('partials/footer') %>

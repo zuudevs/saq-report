@@ -1,0 +1,534 @@
+<%- include('partials/header') %>
+
+<div class="max-w-6xl mx-auto space-y-6 pb-12">
+    <!-- Header Section -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-gradient-to-tr from-slate-700 to-slate-900 rounded-2xl flex items-center justify-center text-white shadow-md">
+                <svg class="w-6 h-6" data-lucide="settings"></svg>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-slate-900">Pengaturan Global</h2>
+                <p class="text-sm text-slate-500">Konfigurasi semester, otomasi WhatsApp bot, dan parameter sistem</p>
+            </div>
+        </div>
+
+        <!-- System Quick Badges -->
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 text-slate-600 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Tahun: <strong class="text-slate-800"><%= config.semester?.year || 2026 %></strong></span>
+            </div>
+            <div class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 text-slate-600 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-blue-500" data-lucide="calendar"></svg>
+                <span><%= config.semester?.name || 'Ganjil' %></span>
+            </div>
+            <div class="bg-white border border-slate-200 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 text-slate-600 shadow-sm">
+                <svg class="w-3.5 h-3.5 text-slate-400" data-lucide="clock"></svg>
+                <span>v<%= config.system?.version || '1.0.0' %></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Sukses / Error -->
+    <% if (saved) { %>
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm animate-fade-in" id="alertSuccess">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
+                    <svg class="w-5 h-5" data-lucide="check-circle"></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm sm:text-base text-emerald-900">Konfigurasi Berhasil Diperbarui!</h4>
+                    <p class="text-xs sm:text-sm text-emerald-700">Semua perubahan telah disimpan ke database MongoDB dan langsung aktif di sistem.</p>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('alertSuccess').remove()" class="text-emerald-500 hover:text-emerald-700 p-1">
+                <svg class="w-5 h-5" data-lucide="x"></svg>
+            </button>
+        </div>
+    <% } %>
+
+    <% if (error) { %>
+        <div class="bg-red-50 border border-red-200 text-red-900 rounded-2xl p-4 sm:p-5 flex items-center justify-between shadow-sm animate-fade-in" id="alertError">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 shrink-0">
+                    <svg class="w-5 h-5" data-lucide="alert-triangle"></svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-sm sm:text-base text-red-900">Gagal Menyimpan Konfigurasi</h4>
+                    <p class="text-xs sm:text-sm text-red-700"><%= error %></p>
+                </div>
+            </div>
+            <button type="button" onclick="document.getElementById('alertError').remove()" class="text-red-500 hover:text-red-700 p-1">
+                <svg class="w-5 h-5" data-lucide="x"></svg>
+            </button>
+        </div>
+    <% } %>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white rounded-2xl p-2 border border-slate-200 shadow-sm flex flex-wrap gap-2">
+        <button type="button" onclick="switchTab('semester')" id="tabBtn-semester"
+                class="tab-btn flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all <%= tab === 'semester' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' %>">
+            <svg class="w-4 h-4" data-lucide="graduation-cap"></svg>
+            <span>Semester & Akademik</span>
+        </button>
+
+        <button type="button" onclick="switchTab('system')" id="tabBtn-system"
+                class="tab-btn flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all <%= tab === 'system' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' %>">
+            <svg class="w-4 h-4" data-lucide="server"></svg>
+            <span>Sistem & WhatsApp Group</span>
+        </button>
+
+        <button type="button" onclick="switchTab('bot')" id="tabBtn-bot"
+                class="tab-btn flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all <%= tab === 'bot' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' %>">
+            <svg class="w-4 h-4" data-lucide="message-square"></svg>
+            <span>Pesan & Reaksi Bot</span>
+        </button>
+
+        <button type="button" onclick="switchTab('raw')" id="tabBtn-raw"
+                class="tab-btn flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all <%= tab === 'raw' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100' %>">
+            <svg class="w-4 h-4" data-lucide="code"></svg>
+            <span>Editor JSON</span>
+        </button>
+    </div>
+
+    <!-- TAB 1: SEMESTER & AKADEMIK -->
+    <div id="tabContent-semester" class="tab-content <%= tab === 'semester' ? '' : 'hidden' %>">
+        <form method="POST" action="/settings/update" class="space-y-6">
+            <input type="hidden" name="current_tab" value="semester">
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" data-lucide="calendar-check"></svg>
+                        Periode Semester Aktif
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                        Informasi ini digunakan langsung oleh generator Berita Acara, Laporan Harian, Rekap Kehadiran, dan kalender kehadiran praktikum.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
+                    <!-- Nama Semester -->
+                    <div class="space-y-2 sm:col-span-2">
+                        <label for="semester_name" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Nama Semester & Periode
+                        </label>
+                        <input type="text" id="semester_name" name="semester_name"
+                               value="<%= config.semester?.name || 'Ganjil, 2026/2027' %>"
+                               placeholder="Contoh: Ganjil, 2026/2027"
+                               class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm font-medium"
+                               required />
+                        <p class="text-xs text-slate-400">Ditampilkan pada judul kop laporan & Berita Acara.</p>
+                    </div>
+
+                    <!-- Tahun Semester -->
+                    <div class="space-y-2">
+                        <label for="semester_year" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Tahun Utama
+                        </label>
+                        <input type="number" id="semester_year" name="semester_year"
+                               value="<%= config.semester?.year || 2026 %>"
+                               placeholder="2026"
+                               min="2020" max="2050"
+                               class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm font-bold text-slate-800"
+                               required />
+                        <p class="text-xs text-slate-400">Menentukan folder export <code>V3/Export/[Tahun]/</code>.</p>
+                    </div>
+
+                    <!-- ID Semester -->
+                    <div class="space-y-2 sm:col-span-1">
+                        <label for="semester_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                            Kode / ID Semester
+                        </label>
+                        <input type="text" id="semester_id" name="semester_id"
+                               value="<%= config.semester?.id || 'SEM_001' %>"
+                               placeholder="SEM_001"
+                               class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm font-mono text-slate-700"
+                               required />
+                    </div>
+                </div>
+
+                <!-- Bulan Aktif Semester -->
+                <div class="pt-4 border-t border-slate-100 space-y-3">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Bulan-Bulan Praktikum Semester Ini
+                            </label>
+                            <p class="text-xs text-slate-400">Exporter dan grid rekap hanya akan mengkalkulasi bulan-bulan yang dicentang di bawah ini.</p>
+                        </div>
+
+                        <!-- Quick Presets -->
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="setSemesterMonths([3,4,5,6,7])"
+                                    class="text-xs font-medium px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors">
+                                Ganjil (Mar-Jul)
+                            </button>
+                            <button type="button" onclick="setSemesterMonths([9,10,11,12,1,2])"
+                                    class="text-xs font-medium px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 transition-colors">
+                                Genap (Sep-Feb)
+                            </button>
+                            <button type="button" onclick="selectAllMonths(true)"
+                                    class="text-xs font-medium px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors">
+                                Semua Bulan
+                            </button>
+                        </div>
+                    </div>
+
+                    <% const activeMonths = config.semester?.months || []; %>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
+                        <% monthNames.forEach(m => { %>
+                            <% const isChecked = activeMonths.includes(m.num); %>
+                            <label class="relative flex items-center p-3.5 rounded-xl border cursor-pointer transition-all hover:bg-slate-50 select-none <%= isChecked ? 'border-blue-500 bg-blue-50/40 text-blue-900 font-bold' : 'border-slate-200 text-slate-700' %>" id="label-month-<%= m.num %>">
+                                <input type="checkbox" name="semester_months" value="<%= m.num %>"
+                                       <%= isChecked ? 'checked' : '' %>
+                                       onchange="toggleMonthCard(this, '<%= m.num %>')"
+                                       class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 mr-2.5">
+                                <div class="text-xs">
+                                    <span class="block text-[10px] text-slate-400 uppercase font-mono">Bulan <%= m.num %></span>
+                                    <span><%= m.name %></span>
+                                </div>
+                            </label>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- Hidden inputs to preserve other sections -->
+                <input type="hidden" name="system_cron_time" value="<%= config.system?.cron_time || '15:00' %>">
+                <input type="hidden" name="system_group_id" value="<%= config.system?.group_id || '' %>">
+                <input type="hidden" name="system_version" value="<%= config.system?.version || '1.0.0' %>">
+                <input type="hidden" name="bot_greetings" value="<%= (config.bot_messages?.greetings || []).join('\n') %>">
+                <input type="hidden" name="bot_emojis" value="<%= (config.bot_messages?.emojis || []).join(' ') %>">
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end">
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 text-sm">
+                        <svg class="w-4 h-4" data-lucide="save"></svg>
+                        <span>Simpan Pengaturan Semester</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 2: SISTEM & WHATSAPP GROUP -->
+    <div id="tabContent-system" class="tab-content <%= tab === 'system' ? '' : 'hidden' %>">
+        <form method="POST" action="/settings/update" class="space-y-6">
+            <input type="hidden" name="current_tab" value="system">
+
+            <!-- Hidden inputs to preserve semester section -->
+            <input type="hidden" name="semester_id" value="<%= config.semester?.id || '' %>">
+            <input type="hidden" name="semester_name" value="<%= config.semester?.name || '' %>">
+            <input type="hidden" name="semester_year" value="<%= config.semester?.year || '' %>">
+            <% (config.semester?.months || []).forEach(m => { %>
+                <input type="hidden" name="semester_months" value="<%= m %>">
+            <% }); %>
+            <input type="hidden" name="bot_greetings" value="<%= (config.bot_messages?.greetings || []).join('\n') %>">
+            <input type="hidden" name="bot_emojis" value="<%= (config.bot_messages?.emojis || []).join(' ') %>">
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-600" data-lucide="message-circle"></svg>
+                        Integrasi WhatsApp & Parameter Sistem
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                        Konfigurasi grup WhatsApp tujuan untuk pengiriman reminder harian otomatis serta broadcast laporan belum masuk.
+                    </p>
+                </div>
+
+                <div class="space-y-5 pt-2">
+                    <!-- WhatsApp Group ID -->
+                    <div class="space-y-2">
+                        <label for="system_group_id" class="block text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                            <span>Target WhatsApp Group ID</span>
+                            <span class="text-[10px] text-slate-400 font-normal">Format: <code>[id]@g.us</code></span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="system_group_id" name="system_group_id"
+                                   value="<%= config.system?.group_id || '' %>"
+                                   placeholder="Contoh: 120363424025729902@g.us"
+                                   class="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors text-sm font-mono text-slate-800" />
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <svg class="w-5 h-5" data-lucide="users"></svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400">
+                            Tombol <em>"Kirim Pengingat Semua Pending"</em> di Dashboard dan Cron harian akan mengirim pesan ke grup ini.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+                        <!-- Cron Reminder Time -->
+                        <div class="space-y-2">
+                            <label for="system_cron_time" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Waktu Reminder Harian Otomatis (WIB)
+                            </label>
+                            <div class="relative">
+                                <input type="time" id="system_cron_time" name="system_cron_time"
+                                       value="<%= config.system?.cron_time || '15:00' %>"
+                                       class="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-sm font-bold text-slate-800" />
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <svg class="w-5 h-5" data-lucide="clock"></svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-slate-400">Waktu automasi background checking untuk reminder asisten.</p>
+                        </div>
+
+                        <!-- Versi Aplikasi -->
+                        <div class="space-y-2">
+                            <label for="system_version" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Versi Aplikasi / Build
+                            </label>
+                            <input type="text" id="system_version" name="system_version"
+                                   value="<%= config.system?.version || '1.0.0' %>"
+                                   placeholder="1.0.0"
+                                   class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 transition-colors text-sm font-mono text-slate-700" />
+                            <p class="text-xs text-slate-400">Versi konfigurasi saat ini.</p>
+                        </div>
+                    </div>
+
+                    <!-- Info Terakhir Diperbarui -->
+                    <div class="p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between text-xs text-slate-500">
+                        <span>Terakhir Diperbarui:</span>
+                        <strong class="font-mono text-slate-700"><%= config.system?.last_updated || '-' %></strong>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end">
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 text-sm">
+                        <svg class="w-4 h-4" data-lucide="save"></svg>
+                        <span>Simpan Pengaturan Sistem</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 3: PESAN & REAKSI BOT -->
+    <div id="tabContent-bot" class="tab-content <%= tab === 'bot' ? '' : 'hidden' %>">
+        <form method="POST" action="/settings/update" class="space-y-6">
+            <input type="hidden" name="current_tab" value="bot">
+
+            <!-- Preserve other fields -->
+            <input type="hidden" name="semester_id" value="<%= config.semester?.id || '' %>">
+            <input type="hidden" name="semester_name" value="<%= config.semester?.name || '' %>">
+            <input type="hidden" name="semester_year" value="<%= config.semester?.year || '' %>">
+            <% (config.semester?.months || []).forEach(m => { %>
+                <input type="hidden" name="semester_months" value="<%= m %>">
+            <% }); %>
+            <input type="hidden" name="system_cron_time" value="<%= config.system?.cron_time || '15:00' %>">
+            <input type="hidden" name="system_group_id" value="<%= config.system?.group_id || '' %>">
+            <input type="hidden" name="system_version" value="<%= config.system?.version || '1.0.0' %>">
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-indigo-600" data-lucide="sparkles"></svg>
+                        Variasi Pesan & Emoji Balasan WhatsApp Bot
+                    </h3>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                        Saat asisten mengirimkan laporan praktikum ke WhatsApp bot, bot akan memilih secara acak satu pesan sapaan dan satu emoji reaksi berikut.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <!-- Greetings -->
+                    <div class="space-y-2">
+                        <label for="bot_greetings" class="block text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                            <span>Daftar Kalimat Greeting (1 baris per kalimat)</span>
+                            <span class="text-[10px] text-slate-400"><%= (config.bot_messages?.greetings || []).length %> kalimat</span>
+                        </label>
+                        <textarea id="bot_greetings" name="bot_greetings" rows="10"
+                                  class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-xs font-mono leading-relaxed"
+                                  placeholder="THX u&#10;IZIIIINNN&#10;Mantap sekali NTe&#10;Surat cinta diterima"><%= (config.bot_messages?.greetings || []).join('\n') %></textarea>
+                        <p class="text-xs text-slate-400">Pisahkan setiap alternatif kalimat dengan tombol <em>Enter (baris baru)</em>.</p>
+                    </div>
+
+                    <!-- Emojis & Live Preview -->
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label for="bot_emojis" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                                Emoji Reaksi Bot
+                            </label>
+                            <input type="text" id="bot_emojis" name="bot_emojis"
+                                   value="<%= (config.bot_messages?.emojis || []).join(' ') %>"
+                                   placeholder="👍 👌 ✨ 🙏 😊 🌟 💯 🎉"
+                                   class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors text-base" />
+                            <p class="text-xs text-slate-400">Pisahkan emoji dengan spasi (contoh: 👍 👌 ✨ 🙏 😊).</p>
+                        </div>
+
+                        <!-- Preview Card -->
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-5 space-y-3">
+                            <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-indigo-600" data-lucide="eye"></svg>
+                                Simulasi Balasan Bot WhatsApp
+                            </h4>
+                            <div class="bg-white p-3.5 rounded-xl border border-indigo-200/60 shadow-sm text-xs text-slate-700 space-y-2">
+                                <p class="text-slate-400 text-[10px] font-mono">Contoh pesan asisten: [Kirim Foto Praktikum]</p>
+                                <div class="bg-emerald-50 text-emerald-950 p-2.5 rounded-lg border border-emerald-200 font-sans">
+                                    <span id="previewGreetingText" class="font-bold">
+                                        <%= (config.bot_messages?.greetings || ['Terima kasih'])[0] %> <%= (config.bot_messages?.emojis || ['👍'])[0] %>
+                                    </span>
+                                    <br>
+                                    <span class="text-[11px] text-emerald-800 mt-1 block">Laporan berhasil dicatat untuk Algoritma & Pemrograman 1 (Kelas A).</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end">
+                    <button type="submit" class="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 text-sm">
+                        <svg class="w-4 h-4" data-lucide="save"></svg>
+                        <span>Simpan Pesan Bot</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- TAB 4: EDITOR JSON LANGSUNG -->
+    <div id="tabContent-raw" class="tab-content <%= tab === 'raw' ? '' : 'hidden' %>">
+        <form method="POST" action="/settings/update-raw" class="space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-slate-700" data-lucide="file-code"></svg>
+                            Editor JSON Konfigurasi Mentah (Raw)
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                            Untuk pengguna tingkat lanjut: Edit langsung struktur JSON konfigurasi global.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="formatJson()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+                            <svg class="w-3.5 h-3.5" data-lucide="align-left"></svg>
+                            <span>Rapihkan (Beautify)</span>
+                        </button>
+                        <button type="button" onclick="copyJson()"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition-colors">
+                            <svg class="w-3.5 h-3.5" data-lucide="copy"></svg>
+                            <span id="copyBtnText">Salin JSON</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <textarea id="raw_json" name="raw_json" rows="18"
+                              class="w-full px-4 py-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none leading-relaxed border border-slate-800"
+                              spellcheck="false" required><%= JSON.stringify(config, null, 2) %></textarea>
+                    <div id="jsonErrorMsg" class="hidden text-xs text-red-600 font-medium"></div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <span class="text-xs text-slate-400">
+                        ⚠️ Pastikan sintaks JSON valid sebelum menekan tombol simpan.
+                    </span>
+                    <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 text-sm">
+                        <svg class="w-4 h-4" data-lucide="save"></svg>
+                        <span>Simpan JSON Mentah</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Tab Switching Logic
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+            btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+        });
+
+        const activeContent = document.getElementById('tabContent-' + tabId);
+        const activeBtn = document.getElementById('tabBtn-' + tabId);
+
+        if (activeContent) activeContent.classList.remove('hidden');
+        if (activeBtn) {
+            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            activeBtn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+        }
+
+        // Update URL search param without reload
+        const url = new URL(window.location);
+        url.searchParams.set('tab', tabId);
+        window.history.replaceState({}, '', url);
+    }
+
+    // Month card styling toggle
+    function toggleMonthCard(checkbox, monthNum) {
+        const card = document.getElementById('label-month-' + monthNum);
+        if (!card) return;
+        if (checkbox.checked) {
+            card.classList.add('border-blue-500', 'bg-blue-50/40', 'text-blue-900', 'font-bold');
+            card.classList.remove('border-slate-200', 'text-slate-700');
+        } else {
+            card.classList.remove('border-blue-500', 'bg-blue-50/40', 'text-blue-900', 'font-bold');
+            card.classList.add('border-slate-200', 'text-slate-700');
+        }
+    }
+
+    function setSemesterMonths(months) {
+        document.querySelectorAll('input[name="semester_months"]').forEach(cb => {
+            const num = parseInt(cb.value, 10);
+            cb.checked = months.includes(num);
+            toggleMonthCard(cb, num);
+        });
+    }
+
+    function selectAllMonths(checked) {
+        document.querySelectorAll('input[name="semester_months"]').forEach(cb => {
+            cb.checked = checked;
+            toggleMonthCard(cb, cb.value);
+        });
+    }
+
+    // JSON Editor helpers
+    function formatJson() {
+        const textarea = document.getElementById('raw_json');
+        const errDiv = document.getElementById('jsonErrorMsg');
+        try {
+            const parsed = JSON.parse(textarea.value);
+            textarea.value = JSON.stringify(parsed, null, 2);
+            errDiv.classList.add('hidden');
+        } catch (e) {
+            errDiv.textContent = 'JSON tidak valid: ' + e.message;
+            errDiv.classList.remove('hidden');
+        }
+    }
+
+    function copyJson() {
+        const textarea = document.getElementById('raw_json');
+        navigator.clipboard.writeText(textarea.value).then(() => {
+            const btnText = document.getElementById('copyBtnText');
+            btnText.textContent = 'Tersalin!';
+            setTimeout(() => { btnText.textContent = 'Salin JSON'; }, 2000);
+        });
+    }
+
+    // Re-initialize Lucide icons
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
+        // Auto fadeout success alert after 5s
+        const successAlert = document.getElementById('alertSuccess');
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.transition = 'opacity 0.5s ease';
+                successAlert.style.opacity = '0';
+                setTimeout(() => successAlert.remove(), 500);
+            }, 5000);
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>

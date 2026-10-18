@@ -1,0 +1,206 @@
+<%- include('partials/header') %>
+
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center space-x-3 mb-8">
+        <a href="/matakuliah" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200">
+            <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </a>
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-gray-800">Edit Mata Kuliah</h2>
+                <p class="text-sm text-gray-500">Perbarui informasi mata kuliah <span class="font-semibold text-green-600"><%= course.name %></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Informasi Mata Kuliah</h3>
+                    <p class="text-sm text-gray-600 mt-1">Field dengan tanda <span class="text-red-500">*</span> wajib diisi</p>
+                </div>
+                <div class="text-xs text-gray-400 font-mono bg-white px-3 py-1 rounded-lg">
+                    ID: <%= course.id %>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="/matakuliah/update/<%= course.id %>" class="p-6 space-y-6">
+            <!-- Kode Mata Kuliah -->
+            <div class="space-y-2">
+                <label for="code" class="block text-sm font-semibold text-gray-700">
+                    Kode Mata Kuliah <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="code" 
+                        name="code" 
+                        value="<%= course.code %>"
+                        placeholder="Contoh: TIF101" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                        required
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Kode unik mata kuliah</p>
+            </div>
+
+            <!-- Nama Mata Kuliah -->
+            <div class="space-y-2">
+                <label for="name" class="block text-sm font-semibold text-gray-700">
+                    Nama Mata Kuliah <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        value="<%= course.name %>"
+                        placeholder="Contoh: Algoritma dan Struktur Data" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                        required
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Nama lengkap mata kuliah</p>
+            </div>
+
+            <!-- SKS -->
+            <div class="space-y-2">
+                <label for="credits" class="block text-sm font-semibold text-gray-700">
+                    Jumlah SKS <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input 
+                        type="number" 
+                        id="credits" 
+                        name="credits" 
+                        value="<%= course.credits %>"
+                        min="1" 
+                        max="6" 
+                        placeholder="Contoh: 3" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                        required
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Jumlah Sistem Kredit Semester (1-6)</p>
+            </div>
+
+            <!-- Deskripsi -->
+            <div class="space-y-2">
+                <label for="description" class="block text-sm font-semibold text-gray-700">
+                    Deskripsi Mata Kuliah
+                </label>
+                <textarea 
+                    id="description" 
+                    name="description" 
+                    rows="4" 
+                    placeholder="Contoh: Mata kuliah ini membahas konsep dasar algoritma dan struktur data..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white resize-none"
+                ><%= course.description || '' %></textarea>
+                <p class="text-xs text-gray-500">Deskripsi singkat mata kuliah (opsional)</p>
+            </div>
+
+            <!-- Departemen -->
+            <div class="space-y-2">
+                <label for="department" class="block text-sm font-semibold text-gray-700">
+                    Departemen/Jurusan
+                </label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="department" 
+                        name="department" 
+                        value="<%= course.department || '' %>"
+                        placeholder="Contoh: Teknik Informatika" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Departemen atau jurusan (opsional)</p>
+            </div>
+
+            <!-- Semester -->
+            <div class="space-y-2">
+                <label for="semester" class="block text-sm font-semibold text-gray-700">
+                    Semester
+                </label>
+                <div class="relative">
+                    <select 
+                        id="semester" 
+                        name="semester" 
+                        class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                    >
+                        <option value="">Pilih Semester</option>
+                        <option value="1" <%= course.semester == 1 ? 'selected' : '' %>>Semester 1</option>
+                        <option value="2" <%= course.semester == 2 ? 'selected' : '' %>>Semester 2</option>
+                        <option value="3" <%= course.semester == 3 ? 'selected' : '' %>>Semester 3</option>
+                        <option value="4" <%= course.semester == 4 ? 'selected' : '' %>>Semester 4</option>
+                        <option value="5" <%= course.semester == 5 ? 'selected' : '' %>>Semester 5</option>
+                        <option value="6" <%= course.semester == 6 ? 'selected' : '' %>>Semester 6</option>
+                        <option value="7" <%= course.semester == 7 ? 'selected' : '' %>>Semester 7</option>
+                        <option value="8" <%= course.semester == 8 ? 'selected' : '' %>>Semester 8</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500">Semester mata kuliah diajarkan (opsional)</p>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100">
+                <button 
+                    type="submit" 
+                    class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Perbarui Data
+                </button>
+                <a 
+                    href="/matakuliah" 
+                    class="flex-1 inline-flex items-center justify-center px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
+                >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Batal
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<%- include('partials/footer') %> 

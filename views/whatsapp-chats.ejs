@@ -1,0 +1,222 @@
+<%- include('partials/header') %>
+
+<div class="max-w-7xl mx-auto space-y-8">
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <svg class="w-8 h-8 text-white" data-lucide="users"></svg>
+            </div>
+            <div>
+                <h2 class="text-3xl font-bold text-gray-900">WhatsApp Chats & Groups</h2>
+                <p class="text-lg text-gray-600">Daftar grup dan kontak yang terdeteksi oleh bot</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <a href="/whatsapp" class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="arrow-left"></svg>
+                Kembali ke Dashboard
+            </a>
+            <button onclick="window.location.reload()" class="inline-flex items-center px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 mr-2" data-lucide="refresh-cw"></svg>
+                Refresh List
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Info -->
+    <% if (status !== 'ready') { %>
+        <% if (status === 'authenticated') { %>
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-xl">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-500 animate-spin" data-lucide="loader-2"></svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700">
+                            WhatsApp telah terotentikasi dan sedang <strong>menyinkronkan data kontak & riwayat chat</strong>. 
+                            Halaman ini akan otomatis diperbarui begitu sinkronisasi selesai...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-xl">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" data-lucide="alert-triangle"></svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-700">
+                            WhatsApp belum terhubung (Status: <strong><%= status %></strong>). 
+                            Silakan <a href="/whatsapp/qr" class="font-bold underline">Login QR</a> terlebih dahulu untuk melihat daftar chat.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    <% } %>
+
+    <!-- Search and Filter -->
+    <div class="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <svg class="w-5 h-5" data-lucide="search"></svg>
+                </span>
+                <input type="text" id="chatSearch" onkeyup="filterChats()" placeholder="Cari nama grup atau ID..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all">
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="filterType('all')" class="type-filter active px-4 py-2 text-sm font-medium rounded-lg bg-blue-100 text-blue-700">Semua</button>
+                <button onclick="filterType('group')" class="type-filter px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Grup</button>
+                <button onclick="filterType('private')" class="type-filter px-4 py-2 text-sm font-medium rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200">Kontak</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chats Table -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama / Chat</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tipe</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID WhatsApp (Listen ID)</th>
+                        <th class="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="chatTableBody" class="divide-y divide-gray-100">
+                    <% if (chats && chats.length > 0) { %>
+                        <% chats.forEach(chat => { 
+                            // Check if this chat is in assistant list
+                            const chatNumber = chat.id.split('@')[0];
+                            const isListened = assistants.some(a => {
+                                let normalized = (a.no_telp || '').replace(/\D/g, '');
+                                if (normalized.startsWith('0')) normalized = '62' + normalized.slice(1);
+                                return chatNumber.endsWith(normalized);
+                            });
+                        %>
+                            <tr class="chat-row hover:bg-gray-50 transition-colors" data-type="<%= chat.isGroup ? 'group' : 'private' %>">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                            <% if (chat.isGroup) { %>
+                                                <svg class="w-5 h-5 text-gray-500" data-lucide="users"></svg>
+                                            <% } else { %>
+                                                <svg class="w-5 h-5 text-gray-500" data-lucide="user"></svg>
+                                            <% } %>
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center space-x-2">
+                                                <p class="font-semibold text-gray-900 chat-name"><%= chat.name || 'Unknown' %></p>
+                                                <% if (isListened) { %>
+                                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-700 uppercase">
+                                                        Listen Active
+                                                    </span>
+                                                <% } %>
+                                            </div>
+                                            <% if (chat.unreadCount > 0) { %>
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <%= chat.unreadCount %> unread
+                                                </span>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium <%= chat.isGroup ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800' %>">
+                                        <%= chat.isGroup ? 'Grup' : 'Kontak' %>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <code class="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700 chat-id"><%= chat.id %></code>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <button onclick="copyToClipboard('<%= chat.id %>')" class="p-2 text-gray-400 hover:text-blue-500 transition-colors" title="Copy ID">
+                                        <svg class="w-5 h-5" data-lucide="copy"></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                                <svg class="w-12 h-12 text-gray-300 mx-auto mb-4" data-lucide="message-square-off"></svg>
+                                <p>Tidak ada chat ditemukan atau bot belum siap.</p>
+                            </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function filterChats() {
+    const input = document.getElementById('chatSearch');
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll('.chat-row');
+
+    rows.forEach(row => {
+        const name = row.querySelector('.chat-name').textContent.toLowerCase();
+        const id = row.querySelector('.chat-id').textContent.toLowerCase();
+        if (name.includes(filter) || id.includes(filter)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+let currentTypeFilter = 'all';
+
+function filterType(type) {
+    currentTypeFilter = type;
+    const rows = document.querySelectorAll('.chat-row');
+    const buttons = document.querySelectorAll('.type-filter');
+
+    buttons.forEach(btn => {
+        if (btn.innerText.toLowerCase() === (type === 'all' ? 'semua' : (type === 'group' ? 'grup' : 'kontak'))) {
+            btn.classList.add('bg-blue-100', 'text-blue-700');
+            btn.classList.remove('bg-gray-100', 'text-gray-700');
+        } else {
+            btn.classList.remove('bg-blue-100', 'text-blue-700');
+            btn.classList.add('bg-gray-100', 'text-gray-700');
+        }
+    });
+
+    rows.forEach(row => {
+        if (type === 'all' || row.dataset.type === type) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('ID berhasil disalin ke clipboard: ' + text);
+    });
+}
+
+<% if (status !== 'ready') { %>
+// Polling status secara otomatis jika belum ready, reload otomatis ketika ready
+const checkStatusInterval = setInterval(async () => {
+    try {
+        const res = await fetch('/api/whatsapp/status');
+        const data = await res.json();
+        if (data.status === 'ready') {
+            clearInterval(checkStatusInterval);
+            window.location.reload();
+        }
+    } catch (e) {
+        // silent fail
+    }
+}, 3000);
+<% } %>
+</script>
+
+<%- include('partials/footer') %>

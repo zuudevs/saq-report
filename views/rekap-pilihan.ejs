@@ -1,0 +1,268 @@
+<%- include('partials/header') %>
+
+<div class="max-w-6xl mx-auto space-y-6 sm:space-y-8">
+    <div class="text-center px-4 sm:px-0">
+        <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 shadow-lg">
+            <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white" data-lucide="calculator"></svg>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Rekap Bendahara</h2>
+        <p class="text-sm sm:text-lg text-gray-600 max-w-2xl mx-auto">
+            Sistem rekap lengkap untuk tracking SKS asisten dan monitoring laporan kelas praktikum
+        </p>
+    </div>
+    
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Asisten</p>
+                    <p class="text-xl sm:text-3xl font-bold text-gray-900"><%= stats.totalAssistants %></p>
+                </div>
+                <div class="w-8 h-8 sm:w-12 sm:h-12 bg-purple-100 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto">
+                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-purple-600" data-lucide="users"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Kelas</p>
+                    <p class="text-xl sm:text-3xl font-bold text-gray-900"><%= stats.totalSchedules %></p>
+                </div>
+                <div class="w-8 h-8 sm:w-12 sm:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto">
+                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-blue-600" data-lucide="calendar"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Total Laporan</p>
+                    <p class="text-xl sm:text-3xl font-bold text-gray-900"><%= stats.totalReports %></p>
+                </div>
+                <div class="w-8 h-8 sm:w-12 sm:h-12 bg-green-100 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto">
+                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-green-600" data-lucide="file-text"></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-2xl p-4 sm:p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+                <div>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500">Mata Kuliah</p>
+                    <p class="text-xl sm:text-3xl font-bold text-gray-900"><%= stats.totalCourses %></p>
+                </div>
+                <div class="w-8 h-8 sm:w-12 sm:h-12 bg-orange-100 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto">
+                    <svg class="w-4 h-4 sm:w-6 sm:h-6 text-orange-600" data-lucide="book-open"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <a href="/rekap/asisten" class="group block h-full">
+            <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group-hover:border-purple-300 h-full flex flex-col">
+                <div class="bg-gradient-to-br from-purple-500 to-purple-600 p-6 sm:p-8 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2">Rekap Asisten</h3>
+                            <p class="text-xs sm:text-sm text-purple-100">Tracking SKS & kehadiran</p>
+                        </div>
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" data-lucide="user-check"></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 sm:p-8 flex-1 flex flex-col">
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Fitur yang Tersedia:</h4>
+                    <div class="space-y-2.5 sm:space-y-3 flex-1">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Total SKS per asisten berdasarkan kehadiran</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Detail kehadiran dengan tanggal dan mata kuliah</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Ranking berdasarkan total SKS</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Status PJ vs asisten reguler</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Export data untuk pembayaran</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 sm:mt-8 flex items-center justify-between pt-4 border-t border-gray-50">
+                        <div class="flex items-center space-x-1.5 sm:space-x-2 text-purple-600 group-hover:text-purple-700">
+                            <span class="text-sm sm:text-base font-semibold">Lihat Rekap</span>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 transform group-hover:translate-x-1 transition-transform" data-lucide="arrow-right"></svg>
+                        </div>
+                        <div class="bg-purple-100 px-2.5 py-1 rounded-full">
+                            <span class="text-[10px] sm:text-xs font-bold text-purple-700">SKS BASED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/rekap/kelas" class="group block h-full">
+            <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group-hover:border-blue-300 h-full flex flex-col">
+                <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 sm:p-8 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2">Rekap Kelas</h3>
+                            <p class="text-xs sm:text-sm text-blue-100">Monitoring laporan kelas</p>
+                        </div>
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" data-lucide="graduation-cap"></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 sm:p-8 flex-1 flex flex-col">
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Fitur yang Tersedia:</h4>
+                    <div class="space-y-2.5 sm:space-y-3 flex-1">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Frekuensi laporan per kelas praktikum</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Breakdown status: hadir, libur, pengganti</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Tingkat kehadiran efektif per kelas</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Timeline laporan terakhir</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Detail setiap pertemuan kelas</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 sm:mt-8 flex items-center justify-between pt-4 border-t border-gray-50">
+                        <div class="flex items-center space-x-1.5 sm:space-x-2 text-blue-600 group-hover:text-blue-700">
+                            <span class="text-sm sm:text-base font-semibold">Lihat Rekap</span>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 transform group-hover:translate-x-1 transition-transform" data-lucide="arrow-right"></svg>
+                        </div>
+                        <div class="bg-blue-100 px-2.5 py-1 rounded-full">
+                            <span class="text-[10px] sm:text-xs font-bold text-blue-700">REPORT BASED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+        
+        <a href="/rekap/kehadiran" class="group block h-full">
+            <div class="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group-hover:border-emerald-300 h-full flex flex-col">
+                <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 sm:p-8 text-white">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-xl sm:text-2xl font-bold mb-1.5 sm:mb-2">Rekap Kehadiran</h3>
+                            <p class="text-xs sm:text-sm text-emerald-100">Spreadsheet jam per bulan</p>
+                        </div>
+                        <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white" data-lucide="clock"></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 sm:p-8 flex-1 flex flex-col">
+                    <h4 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Fitur yang Tersedia:</h4>
+                    <div class="space-y-2.5 sm:space-y-3 flex-1">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Grid kehadiran per tanggal (spreadsheet)</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Jam hadir berdasarkan formula SKS</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Color coding: normal, pengganti, tambahan</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Navigasi per bulan dengan total otomatis</span>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-emerald-500 rounded-full mt-1.5 sm:mt-2 shrink-0"></div>
+                            <span class="text-xs sm:text-sm text-gray-700 leading-snug">Reusable functions untuk export rekap</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 sm:mt-8 flex items-center justify-between pt-4 border-t border-gray-50">
+                        <div class="flex items-center space-x-1.5 sm:space-x-2 text-emerald-600 group-hover:text-emerald-700">
+                            <span class="text-sm sm:text-base font-semibold">Lihat Rekap</span>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 transform group-hover:translate-x-1 transition-transform" data-lucide="arrow-right"></svg>
+                        </div>
+                        <div class="bg-emerald-100 px-2.5 py-1 rounded-full">
+                            <span class="text-[10px] sm:text-xs font-bold text-emerald-700">JAM BASED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <div class="bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl p-5 sm:p-8 border border-gray-100">
+        <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">Tools Tambahan</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+            <a href="/rekap/kehadiran" class="flex items-center space-x-4 p-4 bg-white rounded-xl hover:shadow-md transition-shadow border border-emerald-100 group">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 rounded-lg flex items-center justify-center shrink-0 group-hover:bg-emerald-200 transition-colors">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" data-lucide="download"></svg>
+                </div>
+                <div>
+                    <p class="text-sm sm:text-base font-medium text-gray-900">Export Dokumen</p>
+                    <p class="text-xs sm:text-sm text-gray-500">XLSX, DOCX, ZIP</p>
+                </div>
+            </a>
+
+            <a href="/laporan" class="flex items-center space-x-4 p-4 bg-white rounded-xl hover:shadow-md transition-shadow border border-gray-100">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-indigo-100 rounded-lg flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" data-lucide="file-text"></svg>
+                </div>
+                <div>
+                    <p class="text-sm sm:text-base font-medium text-gray-900">Kelola Laporan</p>
+                    <p class="text-xs sm:text-sm text-gray-500">Edit & tambah laporan</p>
+                </div>
+            </a>
+            
+            <a href="/asisten" class="flex items-center space-x-4 p-4 bg-white rounded-xl hover:shadow-md transition-shadow border border-gray-100">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-lg flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" data-lucide="users"></svg>
+                </div>
+                <div>
+                    <p class="text-sm sm:text-base font-medium text-gray-900">Kelola Asisten</p>
+                    <p class="text-xs sm:text-sm text-gray-500">Data asisten dosen</p>
+                </div>
+            </a>
+            
+            <a href="/jadwal" class="flex items-center space-x-4 p-4 bg-white rounded-xl hover:shadow-md transition-shadow border border-gray-100">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                    <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" data-lucide="calendar"></svg>
+                </div>
+                <div>
+                    <p class="text-sm sm:text-base font-medium text-gray-900">Kelola Jadwal</p>
+                    <p class="text-xs sm:text-sm text-gray-500">Jadwal praktikum</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>

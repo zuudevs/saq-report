@@ -1,0 +1,21 @@
+{
+  "watch": [
+    "server.js",
+    "routes",
+    "services",
+    "views",
+    "config",
+    "middleware",
+    "models",
+    "repositories"
+  ],
+  "ignore": [
+    ".wwebjs_auth/**",
+    ".wwebjs_auth2/**",
+    ".wwebjs_cache/**",
+    "laporan_images/**",
+    "EXPORTER_V2/**",
+    "*.json"
+  ],
+  "ext": "js,ejs"
+}

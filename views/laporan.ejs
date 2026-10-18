@@ -1,0 +1,361 @@
+<%- include('partials/header') %>
+
+<div class="space-y-4 sm:space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shrink-0">
+                <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-lg sm:text-xl font-bold text-gray-800">Daftar Laporan</h2>
+                <p class="text-xs sm:text-sm text-gray-500">Total: <span class="font-semibold text-indigo-600"><%= reports.length %></span> laporan</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <a href="/laporan/add" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Tambah
+            </a>
+            <a href="/laporan/asisten" class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs sm:text-sm font-semibold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" data-lucide="calendar-check"></svg>
+                Asisten
+            </a>
+            <button class="flex-1 sm:flex-none justify-center inline-flex items-center px-3 sm:px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs sm:text-sm font-medium rounded-xl transition-colors duration-200">
+                <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Export
+            </button>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 sm:p-6 border-b border-gray-100">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-800">Filter & Pencarian</h3>
+            <p class="text-xs sm:text-sm text-gray-600 mt-1">Gunakan filter untuk mempersempit hasil pencarian</p>
+        </div>
+        
+        <form method="GET" action="/laporan" class="p-4 sm:p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div class="space-y-1.5 sm:space-y-2">
+                    <label for="month" class="block text-xs sm:text-sm font-semibold text-gray-700">
+                        Bulan
+                    </label>
+                    <div class="relative">
+                        <select 
+                        name="month" 
+                        id="month" 
+                        class="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                        >
+                        <option value="">Semua Bulan</option>
+                        <% ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"].forEach((m, i) => { %>
+                            <option value="<%= i + 1 %>" <%= filters.month == (i + 1) ? 'selected' : '' %>><%= m %></option>
+                            <% }) %>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-1.5 sm:space-y-2">
+                    <label for="status" class="block text-xs sm:text-sm font-semibold text-gray-700">
+                        Status
+                    </label>
+                    <div class="relative">
+                        <select 
+                        name="status" 
+                        id="status" 
+                        class="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 bg-gray-50 focus:bg-white appearance-none"
+                        >
+                        <option value="">Semua Status</option>
+                        <option value="hadir" <%= filters.status === 'hadir' ? 'selected' : '' %>>Hadir</option>
+                        <option value="libur" <%= filters.status === 'libur' ? 'selected' : '' %>>Libur</option>
+                        <option value="pengganti" <%= filters.status === 'pengganti' ? 'selected' : '' %>>Pengganti</option>
+                        <option value="belum ada laporan" <%= filters.status === 'belum ada laporan' ? 'selected' : '' %>>Belum Ada Laporan</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-1.5 sm:space-y-2">
+                <label for="search" class="block text-xs sm:text-sm font-semibold text-gray-700">
+                    Pencarian
+                </label>
+                <div class="relative">
+                    <input 
+                    type="text" 
+                    name="search" 
+                    id="search" 
+                    value="<%= filters.search || '' %>" 
+                    placeholder="Cari matkul, dosen..."
+                    class="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                    />
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-1.5 sm:space-y-2">
+                <label class="hidden md:block text-xs sm:text-sm font-semibold text-gray-700">
+                    Aksi
+                </label>
+                <div class="flex space-x-2 pt-1 md:pt-0">
+                    <button 
+                    type="submit" 
+                    class="flex-1 inline-flex items-center justify-center px-4 py-2.5 sm:py-3 text-sm bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-200"
+                    >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                    Filter
+                </button>
+                <a 
+                href="/laporan" 
+                class="flex-1 inline-flex items-center justify-center px-4 py-2.5 sm:py-3 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors duration-200"
+                >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                Reset
+            </a>
+        </div>
+    </div>
+</div>
+</form>
+</div>
+
+<% if (reports.length === 0) { %>
+    <div class="text-center py-12 sm:py-16 px-4 bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <svg class="w-10 h-10 sm:w-12 sm:h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+        </div>
+        <h3 class="text-lg sm:text-xl font-semibold text-gray-700 mb-2">Tidak Ada Laporan</h3>
+        <p class="text-sm sm:text-base text-gray-500">Tidak ada laporan yang cocok dengan filter yang dipilih</p>
+    </div>
+    <% } else { %>
+        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 whitespace-nowrap sm:whitespace-normal">
+                    <thead class="bg-gradient-to-r from-indigo-50 to-purple-50">
+                        <% 
+                        // Helper untuk membuat link sorting
+                        function getSortUrl(column) {
+                            const query = new URLSearchParams(filters);
+                            if (filters.sortBy === column) {
+                                query.set('sortDir', filters.sortDir === 'asc' ? 'desc' : 'asc');
+                            } else {
+                                query.set('sortBy', column);
+                                query.set('sortDir', 'asc');
+                            }
+                            query.delete('page'); // Kembali ke halaman 1 saat sort berubah
+                            return '/laporan?' + query.toString();
+                        }
+                        
+                        // Helper untuk panah ikon sorting
+                        function getSortIcon(column) {
+                            if (filters.sortBy !== column) return '<svg class="w-3 h-3 sm:w-4 sm:h-4 ml-1 opacity-0 group-hover:opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>';
+                            return filters.sortDir === 'asc' 
+                            ? '<svg class="w-3 h-3 sm:w-4 sm:h-4 ml-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>'
+                            : '<svg class="w-3 h-3 sm:w-4 sm:h-4 ml-1 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>';
+                        }
+                        %>
+                        <tr>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-left min-w-[180px]">
+                                <a href="<%- getSortUrl('date') %>" class="group flex items-center text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider hover:text-indigo-600">
+                                    Status & Tanggal <%- getSortIcon('date') %>
+                                </a>
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-left min-w-[200px]">
+                                <a href="<%- getSortUrl('course') %>" class="group flex items-center text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider hover:text-indigo-600">
+                                    Mata Kuliah <%- getSortIcon('course') %>
+                                </a>
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-left min-w-[160px]">
+                                <a href="<%- getSortUrl('lecturer') %>" class="group flex items-center text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider hover:text-indigo-600">
+                                    Dosen & PJ <%- getSortIcon('lecturer') %>
+                                </a>
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-left text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[200px]">
+                                Materi & Kegiatan 
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-left text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[150px]">
+                                Asisten Hadir
+                            </th>
+                            <th class="px-4 sm:px-6 py-3 sm:py-4 text-center text-[10px] sm:text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">
+                                Aksi
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <% reports.forEach(report => { %>
+                            <% 
+                            let statusClass = 'bg-gray-100 text-gray-700';
+                            let statusIcon = 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+                            
+                            if (report.status === 'hadir') {
+                                statusClass = 'bg-green-100 text-green-800';
+                                statusIcon = 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
+                            } else if (report.status === 'pengganti') {
+                                statusClass = 'bg-blue-100 text-blue-800';
+                                statusIcon = 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15';
+                            } else if (report.status === 'libur') {
+                                statusClass = 'bg-yellow-100 text-yellow-800';
+                                statusIcon = 'M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z';
+                            } else if (report.status === 'belum ada laporan') {
+                                statusClass = 'bg-red-100 text-red-800';
+                                statusIcon = 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+                            }
+                            %>
+                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                <td class="px-4 sm:px-6 py-3 sm:py-4">
+                                    <div class="flex items-center space-x-2 sm:space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 sm:w-10 sm:h-10 <%= statusClass %> rounded-lg flex items-center justify-center">
+                                                <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="<%= statusIcon %>"></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium <%= statusClass %>">
+                                                <%= report.status %>
+                                            </span>
+                                            <p class="text-xs sm:text-sm font-medium text-gray-800 mt-1 whitespace-normal">
+                                                <%= new Date(report.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' }) %>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <td class="px-4 sm:px-6 py-3 sm:py-4">
+                                    <div>
+                                        <p class="text-xs sm:text-sm font-semibold text-gray-800 whitespace-normal">
+                                            <%= report.course ? report.course.name : 'Mata Kuliah Tidak Ditemukan' %>
+                                        </p>
+                                        <% if (report.course && report.schedule) { %>
+                                            <p class="text-[10px] sm:text-xs text-gray-500 mt-0.5">
+                                                <%= report.course.code %> • Kelas <%= report.schedule.class %>
+                                            </p>
+                                            <p class="text-[10px] sm:text-xs text-gray-500">
+                                                <%= report.schedule.day %> • <%= report.schedule.time %>
+                                            </p>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="px-4 sm:px-6 py-3 sm:py-4">
+                                        <div class="space-y-1 sm:space-y-2">
+                                            <% if (report.lecturer) { %>
+                                                <div class="flex items-center space-x-2">
+                                                    <div class="w-5 h-5 sm:w-6 sm:h-6 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                                                        <span class="text-[10px] sm:text-xs font-semibold text-blue-600">
+                                                            <%= report.lecturer.name.charAt(0) %>
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <p class="text-xs sm:text-sm font-medium text-gray-800 whitespace-normal"><%= report.lecturer.name %></p>
+                                                        <% if (report.lecturer.title) { %>
+                                                            <p class="text-[10px] sm:text-xs text-gray-500 whitespace-normal"><%= report.lecturer.title %></p>
+                                                            <% } %>
+                                                        </div>
+                                                    </div>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                            
+                                            <td class="px-4 sm:px-6 py-3 sm:py-4">
+                                                <div class="space-y-1">
+                                                    <p class="text-xs sm:text-sm font-medium text-gray-800 whitespace-normal">
+                                                        <%= report.materi || '-' %>
+                                                    </p>
+                                                    <% if (report.deskripsiKegiatan) { %>
+                                                        <p class="text-[10px] sm:text-xs text-gray-500 line-clamp-2 whitespace-normal" title="<%= report.deskripsiKegiatan %>">
+                                                            <%= report.deskripsiKegiatan %>
+                                                        </p>
+                                                        <% } %>
+                                                        <% if (report.keterangan) { %>
+                                                            <p class="text-[10px] sm:text-xs text-orange-600 font-medium whitespace-normal">
+                                                                <%= report.keterangan %>
+                                                            </p>
+                                                            <% } %>
+                                                        </div>
+                                                    </td>
+                                                    
+                                                    <td class="px-4 sm:px-6 py-3 sm:py-4">
+                                                        <% if (report.attendingAssistants && report.attendingAssistants.length > 0) { %>
+                                                            <div class="flex flex-wrap gap-1">
+                                                                <% report.attendingAssistants.forEach(assistant => { %>
+                                                                    <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium bg-emerald-100 text-emerald-700">
+                                                                        <%= assistant.nama_asisten %>
+                                                                    </span>
+                                                                    <% }) %>
+                                                                </div>
+                                                                <% } else { %>
+                                                                    <span class="text-xs sm:text-sm text-gray-400">Tidak ada data</span>
+                                                                    <% } %>
+                                                                </td>
+                                                                
+                                                                <td class="px-4 sm:px-6 py-3 sm:py-4 text-center">
+                                                                    <div class="flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:space-x-2">
+                                                                        <a href="/laporan/edit/<%= report.id %>" class="w-full sm:w-auto justify-center inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium rounded-lg transition-colors duration-200">
+                                                                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                                            </svg>
+                                                                            Edit
+                                                                        </a>
+                                                                        <form method="POST" action="/laporan/delete/<%= report.id %>" class="w-full sm:w-auto m-0" onsubmit="return confirm('Apakah Anda yakin ingin menghapus laporan ini?')">
+                                                                            <button type="submit" class="w-full sm:w-auto justify-center inline-flex items-center px-2 sm:px-3 py-1.5 sm:py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs sm:text-sm font-medium rounded-lg transition-colors duration-200">
+                                                                                <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                                                </svg>
+                                                                                Hapus
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                            <% }) %>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                            
+                                            <% if (totalPages > 1) { %>
+                                                <div class="flex justify-center items-center gap-1 sm:space-x-2 mt-4 overflow-x-auto pb-2">
+                                                    <% 
+                                                    const pageQuery = new URLSearchParams(filters);
+                                                    // Hapus key yang kosong agar URL tetap bersih
+                                                    for (const [key, value] of Array.from(pageQuery.entries())) {
+                                                        if (!value) pageQuery.delete(key);
+                                                    }
+                                                    %>
+                                                    
+                                                    <% for(let i = 1; i <= totalPages; i++) { 
+                                                        pageQuery.set('page', i);
+                                                        %>
+                                                        <a href="/laporan?<%= pageQuery.toString() %>" 
+                                                            class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm rounded-lg font-medium transition-colors duration-200 shrink-0 <%= currentPage == i ? 'bg-indigo-500 text-white shadow-lg' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' %>">
+                                                            <%= i %>
+                                                        </a>
+                                                        <% } %>
+                                                    </div>
+                                                    <% } %>
+                                                    <% } %>
+                                                </div>
