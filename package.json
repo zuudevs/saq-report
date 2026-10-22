@@ -7,6 +7,7 @@
     "dev": "nodemon server.js",
     "start:benchmark": "node scripts/start-with-json-benchmark.js",
     "start:benchmark:app": "node scripts/start-full-app-with-json-benchmark.js",
+    "benchmark:json": "node scripts/run-json-benchmark.js",
     "summarize:json-benchmark": "node scripts/summarize-json-benchmark.js",
     "export": "node scripts/export.js",
     "postinstall": "node scripts/patch-wwebjs.js",
