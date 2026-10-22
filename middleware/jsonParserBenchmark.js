@@ -117,12 +117,14 @@ function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement, exec
             elapsed_ns: zeMeasurement.elapsedNs,
             ok: zeMeasurement.ok,
             error_name: zeMeasurement.errorName,
+            error_message: zeMeasurement.errorMessage,
             supported_root_and_size: zeJsonSupportedForComparison,
         },
         json_parse: {
             elapsed_ns: jsonMeasurement.elapsedNs,
             ok: jsonMeasurement.ok,
             error_name: jsonMeasurement.errorName,
+            error_message: jsonMeasurement.errorMessage || null,
         },
         comparable,
         ze_json_speedup_ratio: comparable
@@ -137,6 +139,7 @@ function measureZeJson(jsonText) {
     const start = process.hrtime.bigint();
     let ok = false;
     let errorName = null;
+    let errorMessage = null;
 
     try {
         // Hanya scan/validasi dan persiapan tape + Session yang diukur.
@@ -144,12 +147,14 @@ function measureZeJson(jsonText) {
         ok = true;
     } catch (error) {
         errorName = error && error.name ? error.name : 'Error';
+        errorMessage = error && error.message ? error.message : String(error);
     }
 
     return {
         elapsedNs: Number(process.hrtime.bigint() - start),
         ok,
         errorName,
+        errorMessage,
     };
 }
 
@@ -162,6 +167,7 @@ function timeJsonParse(jsonText) {
             elapsedNs: Number(process.hrtime.bigint() - start),
             ok: true,
             errorName: null,
+            errorMessage: null,
             error: null,
             value,
         };
@@ -170,6 +176,7 @@ function timeJsonParse(jsonText) {
             elapsedNs: Number(process.hrtime.bigint() - start),
             ok: false,
             errorName: error && error.name ? error.name : 'Error',
+            errorMessage: error && error.message ? error.message : String(error),
             error,
             value: undefined,
         };
