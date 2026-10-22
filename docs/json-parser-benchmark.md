@@ -1,57 +1,77 @@
 # Benchmark Parser JSON pada SAQ Report
 
-Eksperimen ini membandingkan pemrosesan raw body `application/json` yang sama melalui `@zuudevs/ze-json` dan `JSON.parse()`. Hasil `JSON.parse()` digunakan sebagai `req.body` pada mode terintegrasi; untuk mode mandiri, hasilnya dikembalikan sebagai ringkasan respons HTTP.
+Eksperimen ini membandingkan pemrosesan raw body `application/json` yang sama melalui `@zuudevs/ze-json` dan `JSON.parse()`. Dalam mode aplikasi, hasil `JSON.parse()` tetap digunakan sebagai `req.body`; `ze_json` diukur sebagai parser pembanding. Mode mandiri mengisolasi tahap parser tanpa database, scheduler, atau klien WhatsApp.
 
 ## Persyaratan
 
 - Node.js 24 atau lebih baru (binding ze_json memakai WebAssembly memory64).
 - Dependensi npm sudah diinstal melalui `npm install`.
 
-Paket npm `@zuudevs/ze-json` menyertakan binding JavaScript dan file WASM yang sudah dibangun. Tidak perlu checkout submodule, CMake, Ninja, LLVM/Clang, MongoDB, atau Docker untuk menjalankan **mode benchmark mandiri**.
+Paket npm `@zuudevs/ze-json` menyertakan binding JavaScript dan file WASM yang sudah dibangun. Mode benchmark mandiri tidak membutuhkan checkout submodule, CMake, Ninja, LLVM/Clang, MongoDB, atau Docker.
 
-## Mode A — benchmark mandiri tanpa MongoDB/Docker
+## Prosedur benchmark yang direkomendasikan
+
+### 1. Jalankan server benchmark mandiri
 
 Dari folder root repository:
 
     npm run start:benchmark
 
-Server benchmark berjalan di `http://127.0.0.1:3100` (dapat diubah dengan `BENCHMARK_HOST` dan `BENCHMARK_PORT`). Mode ini hanya menjalankan penerima benchmark ringan dan tidak memuat route bisnis, MongoDB, scheduler, ataupun klien WhatsApp SAQ Report. Ini berguna untuk mengukur overhead tahap parser secara terisolasi.
-
-Health check:
+Server berjalan di `http://127.0.0.1:3100` (dapat diubah dengan `BENCHMARK_HOST` dan `BENCHMARK_PORT`). Health check:
 
     Invoke-RestMethod -Uri http://127.0.0.1:3100/health
 
-Kirim payload JSON contoh dari PowerShell:
+### 2. Jalankan runner dengan warm-up dan payload terkontrol
 
-    $payload = '{"source":"manual-test","ok":true,"numbers":[1,2,3]}'
-    Invoke-RestMethod -Uri http://127.0.0.1:3100/benchmark -Method Post -ContentType 'application/json' -Body $payload
+Buka terminal kedua di folder repository:
 
-Setiap request `application/json` dicoba dengan ze_json lalu JSON.parse. Endpoint `POST /benchmark` akan mengembalikan status sederhana dan daftar key object. Payload mentah tidak disimpan.
+    npm run benchmark:json -- --iterations 100 --warmup 20
 
-## Mode B — aplikasi SAQ Report lengkap
+Runner mengirim tiga payload object deterministik (small, medium, large). Secara default, setiap payload mendapat 20 request warm-up dan 100 sampel terukur. Urutan workload terukur diacak secara deterministik agar ukuran payload tidak selalu diuji dalam urutan yang sama. Nilai warm-up diberi header `X-Benchmark-Phase: warmup`, dan diberi label workload melalui header `X-Benchmark-Workload`.
 
-Jika kamu perlu melewatkan request melalui route SAQ Report sesungguhnya, jalankan:
+Opsi yang tersedia:
+
+- `--iterations N`: jumlah sampel terukur per payload, default 100.
+- `--warmup N`: jumlah request warm-up per payload, default 20.
+- `--url URL`: URL endpoint benchmark, default `http://127.0.0.1:3100/benchmark`.
+- `--help`: tampilkan bantuan.
+
+Contoh untuk pengujian lebih singkat:
+
+    npm run benchmark:json -- --iterations 30 --warmup 10
+
+Runner bersifat serial; waktu jaringan tidak dimasukkan ke durasi parser yang diukur di server, tetapi aktivitas sistem tetap dapat memengaruhi hasil. Untuk hasil yang lebih kuat, jalankan beberapa proses/batch independen pada kondisi mesin yang sebanding.
+
+### 3. Buat ringkasan dari JSONL terbaru
+
+Setelah runner selesai:
+
+    $run = Get-ChildItem .\output\benchmarks\json-parser\*.jsonl | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    npm run summarize:json-benchmark -- "$($run.FullName)"
+
+Skrip membuat file `.summary.json` di sebelah JSONL. Ringkasan melaporkan statistik agregat dan per payload hash/workload, jumlah warm-up yang dikecualikan, rasio median per request, rasio dari median waktu, geometric mean rasio, throughput perkiraan, dan dugaan outlier.
+
+## Cara membaca hasil
+
+- `median_per_request_speedup_ratio` adalah median rasio waktu `JSON.parse()` dibagi waktu `ze_json` untuk setiap request. Nilai lebih besar dari 1 berarti `ze_json` lebih cepat menurut rasio itu.
+- `speedup_ratio_from_medians` membagi median waktu `JSON.parse()` dengan median waktu `ze_json`. Nilai ini tidak selalu sama dengan median rasio per request.
+- Untuk jumlah sampel genap, median adalah rata-rata dua nilai tengah. P95 menggunakan nearest-rank.
+- Urutan pemanggilan parser digilir antara `ze_json-first` dan `json_parse-first`, serta dicatat pada tiap baris JSONL untuk membantu memeriksa bias urutan.
+- Dugaan outlier ditandai menggunakan Tukey upper fence (`Q3 + 1.5 × IQR`) per kelompok payload dan parser. Outlier **tidak dihapus** dari statistik utama.
+- Throughput agregat dihitung dari jumlah byte dibagi jumlah durasi parser. Ia dapat sangat terpengaruh oleh outlier; baca bersama median, P95, rata-rata, dan maksimum.
+- JSONL menyimpan metadata payload termasuk SHA-256, ukuran, rute, phase, workload, urutan eksekusi, status parser, dan durasi. Payload mentah tidak disimpan.
+
+## Mode aplikasi penuh
+
+Jika perlu mengukur request yang masuk ke middleware aplikasi SAQ Report sesungguhnya, jalankan:
 
     npm run start:benchmark:app
 
-Mode ini memuat seluruh aplikasi dan **tetap membutuhkan MongoDB serta layanan lain yang diperlukan aplikasi**. Gunakan mode ini jika ingin mengukur parser di alur request yang sungguh-sungguh melewati aplikasi, bukan eksperimen parser terisolasi.
+Mode ini membutuhkan MongoDB dan layanan yang diperlukan aplikasi. Untuk membandingkan tahap parser tanpa gangguan dari browser WhatsApp, scheduler, database, atau route bisnis, prioritaskan mode mandiri.
 
-## Hasil dan ringkasan
+## Batasan metodologi
 
-Secara default, hasil ditulis ke `output/benchmarks/json-parser`. Setiap baris JSONL berisi timestamp, method, path tanpa query string, ukuran body, SHA-256 payload, status kedua parser, durasi dalam nanodetik, dan rasio waktu bila payload dapat dibandingkan. Lokasi output dapat diubah memakai `JSON_PARSER_BENCHMARK_DIR`. Batas body JSON default adalah 100 KiB dan dapat diubah lewat `JSON_BODY_LIMIT`.
-
-Untuk membuat ringkasan file hasil:
-
-    $run = Get-ChildItem .\output\benchmarks\json-parser\*.jsonl | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-    npm run summarize:json-benchmark -- $run.FullName
-
-Skrip membuat file `.summary.json` di sebelah JSONL, berisi minimum, median, rata-rata, p95, maksimum, jumlah payload yang bisa dibandingkan, kegagalan parser, rasio median, dan throughput perkiraan.
-
-## Interpretasi dan batasan
-
-- Durasi ze_json mengukur scanner/validasi, pembuatan tape struktural, dan inisialisasi Session on-demand melalui binding WASM.
-- Durasi JSON.parse mengukur parsing penuh dan materialisasi nilai JavaScript. Karena JSON.parse menghasilkan object lengkap sedangkan ze_json on-demand tidak, keduanya bukan workload yang setara. Rasio bukan bukti bahwa pemrosesan end-to-end aplikasi menjadi secepat itu.
-- API JavaScript ze_json ditujukan untuk Session ber-root object dan memiliki region payload 1 MiB. Hanya root object dengan ukuran di bawah 1 MiB yang masuk ke rasio; payload lain tetap dicoba oleh JSON.parse tetapi tidak dinyatakan sebanding.
-- Jika ze_json gagal, request yang valid tetap diproses oleh JSON.parse dan kegagalan dicatat di hasil.
-- Isi payload tidak dicatat, hanya SHA-256. Path endpoint dan timestamp tetap tercatat, jadi periksa output sebelum membagikannya.
-- Gunakan `npm run start:benchmark` untuk kebutuhan tanpa database. Gunakan `npm run start:benchmark:app` hanya saat dependensi aplikasi lengkap tersedia.
+- Durasi `ze_json` mengukur scan/validasi, pembangunan tape struktural, dan inisialisasi Session on-demand melalui binding WASM. Hasil Doc tidak ditelusuri lebih lanjut.
+- Durasi `JSON.parse()` mengukur parsing penuh dan materialisasi nilai JavaScript. Workload kedua parser tidak identik, jadi rasio bukan bukti bahwa pemrosesan end-to-end aplikasi menjadi secepat itu.
+- Binding `ze_json` yang diuji ditujukan untuk root object dengan payload di bawah 1 MiB. Hanya payload yang didukung dan berhasil oleh kedua parser masuk rasio perbandingan.
+- Semua hasil, termasuk sampel ekstrem, dipertahankan. Outlier perlu ditinjau dan diuji ulang, bukan dihapus hanya karena membuat hasil kurang menguntungkan.
