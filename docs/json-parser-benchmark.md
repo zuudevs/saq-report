@@ -75,3 +75,6 @@ Mode ini membutuhkan MongoDB dan layanan yang diperlukan aplikasi. Untuk memband
 - Durasi `JSON.parse()` mengukur parsing penuh dan materialisasi nilai JavaScript. Workload kedua parser tidak identik, jadi rasio bukan bukti bahwa pemrosesan end-to-end aplikasi menjadi secepat itu.
 - Binding `ze_json` yang diuji ditujukan untuk root object dengan payload di bawah 1 MiB. Hanya payload yang didukung dan berhasil oleh kedua parser masuk rasio perbandingan.
 - Semua hasil, termasuk sampel ekstrem, dipertahankan. Outlier perlu ditinjau dan diuji ulang, bukan dihapus hanya karena membuat hasil kurang menguntungkan.
+
+
+Diagnostik: baris JSONL menyimpan nama dan pesan error parser. Statistik dan rasio komparatif hanya memakai sampel ketika kedua parser sukses; latensi percobaan yang gagal masih ditampilkan terpisah.
