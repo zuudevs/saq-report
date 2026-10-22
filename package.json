@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "start:benchmark": "node scripts/start-with-json-benchmark.js",
+    "build:ze-json": "node scripts/build-ze-json.js",
+    "summarize:json-benchmark": "node scripts/summarize-json-benchmark.js",
     "export": "node scripts/export.js",
     "postinstall": "node scripts/patch-wwebjs.js",
     "test": "echo \"Error: no test specified\" && exit 1"
