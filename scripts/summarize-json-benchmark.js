@@ -118,6 +118,22 @@ function groupPayloads(records) {
                 .filter((value) => Number.isFinite(value) && value > 0);
             const zeStats = stats(zeValues);
             const nativeStats = stats(nativeValues);
+            // Never report a comparative ratio when either parser failed. Raw
+            // attempt latencies remain visible in ze_json/json_parse below.
+            const zeComparableStats = stats(
+                comparableRows.map((row) => row.ze_json && row.ze_json.elapsed_ns)
+            );
+            const nativeComparableStats = stats(
+                comparableRows.map((row) => row.json_parse && row.json_parse.elapsed_ns)
+            );
+            const zeErrors = [...new Set(groupRows
+                .filter((row) => row.ze_json && row.ze_json.ok === false)
+                .map((row) => row.ze_json.error_message)
+                .filter((message) => typeof message === 'string' && message.length > 0))].slice(0, 3);
+            const nativeErrors = [...new Set(groupRows
+                .filter((row) => row.json_parse && row.json_parse.ok === false)
+                .map((row) => row.json_parse.error_message)
+                .filter((message) => typeof message === 'string' && message.length > 0))].slice(0, 3);
 
             return {
                 workload: group.workload,
@@ -125,12 +141,14 @@ function groupPayloads(records) {
                 payload_bytes: group.payload_bytes,
                 samples: groupRows.length,
                 comparable_samples: comparableRows.length,
-                ze_json: zeStats,
-                json_parse: nativeStats,
+                ze_json_all_attempts: zeStats,
+                json_parse_all_attempts: nativeStats,
+                ze_json_comparable: zeComparableStats,
+                json_parse_comparable: nativeComparableStats,
                 median_per_request_speedup_ratio: stats(ratios)?.median ?? null,
-                speedup_ratio_from_medians: zeStats && nativeStats &&
-                    zeStats.median > 0
-                    ? nativeStats.median / zeStats.median
+                speedup_ratio_from_medians: zeComparableStats && nativeComparableStats &&
+                    zeComparableStats.median > 0
+                    ? nativeComparableStats.median / zeComparableStats.median
                     : null,
                 suspected_high_outliers: {
                     ze_json: countHighOutliers(zeValues),
@@ -143,6 +161,10 @@ function groupPayloads(records) {
                 json_parse_failures: groupRows.filter(
                     (row) => row.json_parse && row.json_parse.ok === false
                 ).length,
+                parser_error_samples: {
+                    ze_json: zeErrors,
+                    json_parse: nativeErrors,
+                },
             };
         })
         .sort((a, b) =>
@@ -177,6 +199,16 @@ const orderCounts = rows.reduce((counts, row) => {
     counts[order] = (counts[order] || 0) + 1;
     return counts;
 }, {});
+const parserErrorSamples = {
+    ze_json: [...new Set(rows
+        .filter((row) => row.ze_json && row.ze_json.ok === false)
+        .map((row) => row.ze_json.error_message)
+        .filter((message) => typeof message === 'string' && message.length > 0))].slice(0, 10),
+    json_parse: [...new Set(rows
+        .filter((row) => row.json_parse && row.json_parse.ok === false)
+        .map((row) => row.json_parse.error_message)
+        .filter((message) => typeof message === 'string' && message.length > 0))].slice(0, 10),
+};
 
 const summary = {
     schema_version: 2,
@@ -192,6 +224,7 @@ const summary = {
     ze_json_failures: rows.filter((row) => row.ze_json && row.ze_json.ok === false).length,
     json_parse_failures: rows.filter((row) => row.json_parse && row.json_parse.ok === false).length,
     execution_order_counts: orderCounts,
+    parser_error_samples: parserErrorSamples,
     elapsed_ns: {
         ze_json_all_measurements: stats(allZeElapsed),
         json_parse_all_measurements: stats(allNativeElapsed),
