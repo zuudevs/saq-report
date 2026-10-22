@@ -4,7 +4,6 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { once } = require('node:events');
-const { pathToFileURL } = require('node:url');
 const express = require('express');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -47,30 +46,13 @@ async function initialize() {
         );
     }
 
-    const modulePath = path.join(ROOT, 'vendor', 'ze_json', 'js', 'ze_json.mjs');
-    if (!fs.existsSync(modulePath)) {
-        throw new Error(
-            'Submodule vendor/ze_json belum tersedia. Jalankan: git submodule update --init --recursive'
-        );
-    }
+    // Paket npm menyertakan ze_json.mjs dan ze_json_core.wasm, sehingga
+    // pengguna tidak perlu checkout submodule atau membangun WASM sendiri.
+    const { ZeJson } = await import('@zuudevs/ze-json');
+    zeJson = await ZeJson.load();
 
-    const wasmPath = process.env.ZE_JSON_WASM_PATH
-        ? path.resolve(process.env.ZE_JSON_WASM_PATH)
-        : path.join(
-            ROOT,
-            'vendor',
-            'ze_json',
-            'build',
-            'wasm64-release',
-            'src',
-            'ze_json_core.wasm'
-        );
-
-    const { ZeJson } = await import(pathToFileURL(modulePath).href);
-    zeJson = await ZeJson.load({ wasmPath });
-
-    // Warm-up di luar pengukuran request agar biaya startup dan kompilasi WASM
-    // tidak tercampur dengan angka payload pertama.
+    // Warm-up di luar pengukuran request agar biaya startup tidak bercampur
+    // dengan angka payload pertama.
     const warmupPayload = '{"benchmarkWarmup":true}';
     for (let i = 0; i < 50; i += 1) {
         zeJson.openDocument(warmupPayload);
@@ -105,8 +87,10 @@ function writeResult(result) {
 }
 
 function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement) {
+    // writeText menyisihkan satu byte NUL di belakang payload, jadi payload
+    // harus lebih kecil dari kapasitas region 1 MiB, bukan sama dengannya.
     const zeJsonSupportedForComparison =
-        rootKind === 'object' && rawBody.length <= MAX_ZE_JSON_PAYLOAD_BYTES;
+        rootKind === 'object' && rawBody.length < MAX_ZE_JSON_PAYLOAD_BYTES;
     const comparable =
         zeJsonSupportedForComparison &&
         zeMeasurement.ok === true &&
@@ -156,7 +140,7 @@ function middleware(req, res, next) {
         }
 
         let jsonText = rawBody.toString('utf8');
-        // Body-parser JSON membuang UTF-8 BOM sebelum memanggil JSON.parse.
+        // body-parser JSON membuang UTF-8 BOM sebelum memanggil JSON.parse.
         if (jsonText.charCodeAt(0) === 0xFEFF) {
             jsonText = jsonText.slice(1);
         }
@@ -168,7 +152,7 @@ function middleware(req, res, next) {
         let zeErrorName = null;
         try {
             // openDocument melakukan scan/validasi dan membangun tape + Session.
-            // Hasil Doc tidak dipakai untuk menghindari kerja aplikasi tambahan.
+            // Hasil Doc tidak dipakai agar biaya baca nilai tidak ikut diukur.
             zeJson.openDocument(jsonText);
             zeOk = true;
         } catch (error) {
@@ -226,6 +210,15 @@ function middleware(req, res, next) {
 }
 
 async function close() {
+    if (zeJson) {
+        try {
+            zeJson.close();
+        } catch (error) {
+            console.error('[JSON benchmark] Gagal merilis arena ze_json:', error.message);
+        }
+        zeJson = null;
+    }
+
     if (!outputStream || outputStream.destroyed) return;
     const stream = outputStream;
     outputStream = null;
