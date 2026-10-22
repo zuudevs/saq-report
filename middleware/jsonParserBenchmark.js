@@ -155,7 +155,12 @@ function middleware(req, res, next) {
             return next();
         }
 
-        const jsonText = rawBody.toString('utf8');
+        let jsonText = rawBody.toString('utf8');
+        // Body-parser JSON membuang UTF-8 BOM sebelum memanggil JSON.parse.
+        if (jsonText.charCodeAt(0) === 0xFEFF) {
+            jsonText = jsonText.slice(1);
+        }
+
         const rootKind = getRootKind(jsonText);
 
         const zeStart = process.hrtime.bigint();
