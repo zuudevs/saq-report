@@ -46,13 +46,11 @@ async function initialize() {
         );
     }
 
-    // Paket npm menyertakan ze_json.mjs dan ze_json_core.wasm, sehingga
-    // pengguna tidak perlu checkout submodule atau membangun WASM sendiri.
+    // Paket npm menyertakan binding JavaScript dan file WASM yang sudah dibangun.
     const { ZeJson } = await import('@zuudevs/ze-json');
     zeJson = await ZeJson.load();
 
-    // Warm-up di luar pengukuran request agar biaya startup tidak bercampur
-    // dengan angka payload pertama.
+    // Warm-up startup dilakukan sebelum file hasil dibuat.
     const warmupPayload = '{"benchmarkWarmup":true}';
     for (let i = 0; i < 50; i += 1) {
         zeJson.openDocument(warmupPayload);
@@ -86,7 +84,7 @@ function writeResult(result) {
     outputStream.write(JSON.stringify(result) + '\n');
 }
 
-function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement) {
+function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement, executionOrder) {
     // writeText menyisihkan satu byte NUL di belakang payload, jadi payload
     // harus lebih kecil dari kapasitas region 1 MiB, bukan sama dengannya.
     const zeJsonSupportedForComparison =
@@ -95,11 +93,19 @@ function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement) {
         zeJsonSupportedForComparison &&
         zeMeasurement.ok === true &&
         jsonMeasurement.ok === true;
+    const requestedWorkload = req.get('x-benchmark-workload');
 
     return {
-        schema_version: 1,
+        schema_version: 2,
         sequence: ++sequence,
         timestamp: new Date().toISOString(),
+        benchmark_phase: req.get('x-benchmark-phase') === 'warmup'
+            ? 'warmup'
+            : 'measurement',
+        workload: typeof requestedWorkload === 'string'
+            ? requestedWorkload.slice(0, 80)
+            : null,
+        execution_order: executionOrder,
         method: req.method,
         route: req.path,
         payload_bytes: rawBody.length,
@@ -127,6 +133,70 @@ function makeResult(req, rawBody, rootKind, zeMeasurement, jsonMeasurement) {
     };
 }
 
+function measureZeJson(jsonText) {
+    const start = process.hrtime.bigint();
+    let ok = false;
+    let errorName = null;
+
+    try {
+        // Hanya scan/validasi dan persiapan tape + Session yang diukur.
+        zeJson.openDocument(jsonText);
+        ok = true;
+    } catch (error) {
+        errorName = error && error.name ? error.name : 'Error';
+    }
+
+    return {
+        elapsedNs: Number(process.hrtime.bigint() - start),
+        ok,
+        errorName,
+    };
+}
+
+function measureJsonParse(jsonText) {
+    const start = process.hrtime.bigint();
+
+    try {
+        return {
+            elapsedNs: 0,
+            ok: true,
+            errorName: null,
+            error: null,
+            value: JSON.parse(jsonText),
+        };
+    } catch (error) {
+        return {
+            elapsedNs: Number(process.hrtime.bigint() - start),
+            ok: false,
+            errorName: error && error.name ? error.name : 'Error',
+            error,
+            value: undefined,
+        };
+    }
+}
+
+function timeJsonParse(jsonText) {
+    const start = process.hrtime.bigint();
+
+    try {
+        return {
+            elapsedNs: Number(process.hrtime.bigint() - start),
+            ok: true,
+            errorName: null,
+            error: null,
+            value: JSON.parse(jsonText),
+        };
+    } catch (error) {
+        return {
+            elapsedNs: Number(process.hrtime.bigint() - start),
+            ok: false,
+            errorName: error && error.name ? error.name : 'Error',
+            error,
+            value: undefined,
+        };
+    }
+}
+
 function middleware(req, res, next) {
     rawJsonParser(req, res, (rawError) => {
         if (rawError) return next(rawError);
@@ -134,7 +204,6 @@ function middleware(req, res, next) {
 
         const rawBody = req.body;
         if (rawBody.length === 0) {
-            // Menjaga semantik express.json untuk body JSON kosong.
             req.body = {};
             return next();
         }
@@ -146,52 +215,46 @@ function middleware(req, res, next) {
         }
 
         const rootKind = getRootKind(jsonText);
+        // Ganti urutan parser secara bergantian untuk mengurangi bias urutan
+        // eksekusi. Urutan aktual dicatat agar dapat dianalisis belakangan.
+        const nextSequence = sequence + 1;
+        const executionOrder = nextSequence % 2 === 0
+            ? 'ze_json-first'
+            : 'json_parse-first';
 
-        const zeStart = process.hrtime.bigint();
-        let zeOk = false;
-        let zeErrorName = null;
-        try {
-            // openDocument melakukan scan/validasi dan membangun tape + Session.
-            // Hasil Doc tidak dipakai agar biaya baca nilai tidak ikut diukur.
-            zeJson.openDocument(jsonText);
-            zeOk = true;
-        } catch (error) {
-            zeErrorName = error && error.name ? error.name : 'Error';
+        let zeMeasurement;
+        let jsonMeasurement;
+        if (executionOrder === 'ze_json-first') {
+            zeMeasurement = measureZeJson(jsonText);
+            jsonMeasurement = timeJsonParse(jsonText);
+        } else {
+            jsonMeasurement = timeJsonParse(jsonText);
+            zeMeasurement = measureZeJson(jsonText);
         }
-        const zeElapsedNs = Number(process.hrtime.bigint() - zeStart);
 
-        const jsonStart = process.hrtime.bigint();
-        let parsedValue;
-        try {
-            parsedValue = JSON.parse(jsonText);
-        } catch (error) {
-            const jsonElapsedNs = Number(process.hrtime.bigint() - jsonStart);
-
+        if (!jsonMeasurement.ok) {
             writeResult(makeResult(
                 req,
                 rawBody,
                 rootKind,
-                { elapsedNs: zeElapsedNs, ok: zeOk, errorName: zeErrorName },
-                {
-                    elapsedNs: jsonElapsedNs,
-                    ok: false,
-                    errorName: error && error.name ? error.name : 'Error',
-                }
+                zeMeasurement,
+                jsonMeasurement,
+                executionOrder
             ));
 
             // Meniru error JSON dari body-parser: request malformed tetap 400.
-            error.status = 400;
-            error.type = 'entity.parse.failed';
-            return next(error);
+            jsonMeasurement.error.status = 400;
+            jsonMeasurement.error.type = 'entity.parse.failed';
+            return next(jsonMeasurement.error);
         }
 
-        const jsonElapsedNs = Number(process.hrtime.bigint() - jsonStart);
         writeResult(makeResult(
             req,
             rawBody,
             rootKind,
-            { elapsedNs: zeElapsedNs, ok: zeOk, errorName: zeErrorName },
-            { elapsedNs: jsonElapsedNs, ok: true, errorName: null }
+            zeMeasurement,
+            jsonMeasurement,
+            executionOrder
         ));
 
         // express.json strict mode menerima object/array, bukan JSON scalar.
@@ -204,7 +267,7 @@ function middleware(req, res, next) {
             return next(strictError);
         }
 
-        req.body = parsedValue;
+        req.body = jsonMeasurement.value;
         return next();
     });
 }
