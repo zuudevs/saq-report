@@ -153,38 +153,17 @@ function measureZeJson(jsonText) {
     };
 }
 
-function measureJsonParse(jsonText) {
-    const start = process.hrtime.bigint();
-
-    try {
-        return {
-            elapsedNs: 0,
-            ok: true,
-            errorName: null,
-            error: null,
-            value: JSON.parse(jsonText),
-        };
-    } catch (error) {
-        return {
-            elapsedNs: Number(process.hrtime.bigint() - start),
-            ok: false,
-            errorName: error && error.name ? error.name : 'Error',
-            error,
-            value: undefined,
-        };
-    }
-}
-
 function timeJsonParse(jsonText) {
     const start = process.hrtime.bigint();
 
     try {
+        const value = JSON.parse(jsonText);
         return {
             elapsedNs: Number(process.hrtime.bigint() - start),
             ok: true,
             errorName: null,
             error: null,
-            value: JSON.parse(jsonText),
+            value,
         };
     } catch (error) {
         return {
