@@ -7,7 +7,9 @@
     "dev": "nodemon server.js",
     "start:benchmark": "node scripts/start-with-json-benchmark.js",
     "start:benchmark:app": "node scripts/start-full-app-with-json-benchmark.js",
+    "start:raw-benchmark": "node scripts/start-raw-json-benchmark-server.js",
     "benchmark:json": "node scripts/run-json-benchmarkjs.js",
+    "benchmark:json:real": "node scripts/feed-real-payloads.js",
     "summarize:json-benchmark": "node scripts/summarize-json-benchmark.js",
     "export": "node scripts/export.js",
     "postinstall": "node scripts/patch-wwebjs.js",
@@ -37,7 +39,7 @@
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "whatsapp-web.js": "^1.34.7",
-    "@zuudevs/ze-json": "0.1.3"
+    "@zuudevs/ze-json": "0.1.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",

@@ -377,8 +377,17 @@ async function initializeClient(options = {}) {
     
     // ── Event: Message ─────────────────────────────────────────────────────────
     client.on('message_create', async (message) => {
-        await handleIncomingMessage(message, state.client);
-    });
+		// ID chat yang benar, termasuk ketika pesan dikirim oleh akun sendiri.
+		const chatId = message.fromMe ? message.to : message.from;
+
+		console.log('[WHATSAPP] Chat ID:', chatId);
+
+		if (typeof chatId === 'string' && chatId.endsWith('@g.us')) {
+			console.log('[WHATSAPP] Group ID:', chatId);
+		}
+
+		await handleIncomingMessage(message, state.client);
+	});
     
     // ── Inisialisasi dengan Watchdog Timer ──────────────────────────────────────
     try {
