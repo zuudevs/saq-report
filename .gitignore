@@ -33,6 +33,7 @@ Export/
 output_export/
 **/output_export/
 EXPORTER_V2/
+db/
 *.rar
 *.zip
 *.7z
