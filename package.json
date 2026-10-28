@@ -5,17 +5,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "start:benchmark": "node scripts/start-with-json-benchmark.js",
-    "start:benchmark:app": "node scripts/start-full-app-with-json-benchmark.js",
     "start:raw-benchmark": "node scripts/start-raw-json-benchmark-server.js",
     "benchmark:json": "node scripts/run-json-benchmarkjs.js",
     "benchmark:json:real": "node scripts/feed-real-payloads.js",
-    "summarize:json-benchmark": "node scripts/summarize-json-benchmark.js",
     "export": "node scripts/export.js",
     "postinstall": "node scripts/patch-wwebjs.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "benchmark:json:http": "node scripts/run-json-benchmark.js",
-    "summarize:json-benchmark:http": "node scripts/summarize-json-benchmark.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",

@@ -25,7 +25,6 @@ const PATHS   = require('./config/paths');
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 const { multerErrorHandler, globalErrorHandler } = require('./middleware/errorHandler');
-const jsonParserBenchmark = require('./middleware/jsonParserBenchmark');
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const dashboardRoutes  = require('./routes/dashboardRoutes');
@@ -58,11 +57,7 @@ app.set('views', PATHS.VIEWS_DIR);
 
 // Body parsers
 app.use(express.urlencoded({ extended: true }));
-app.use(
-    jsonParserBenchmark.enabled
-        ? jsonParserBenchmark.middleware
-        : express.json()
-);
+app.use(express.json());
 
 // Static files (gambar laporan, dsb.)
 app.use(express.static(PATHS.ROOT));
@@ -105,31 +100,8 @@ process.on('uncaughtException', (error) => {
     // Tidak exit — biarkan web server tetap berjalan
 });
 
-// ─── Graceful shutdown khusus mode benchmark ──────────────────────────────────
-if (jsonParserBenchmark.enabled) {
-    let shuttingDown = false;
-
-    function shutdown() {
-        if (shuttingDown) return;
-        shuttingDown = true;
-
-        server.close(async () => {
-            try {
-                await jsonParserBenchmark.close();
-            } catch (error) {
-                console.error('[JSON benchmark] Gagal menutup output:', error.message);
-            }
-            process.exit(0);
-        });
-    }
-
-    process.once('SIGINT', shutdown);
-    process.once('SIGTERM', shutdown);
-}
-
 // ─── Start Server ─────────────────────────────────────────────────────────────
 async function start() {
-    await jsonParserBenchmark.initialize();
     await connectDB();
     await initRepositories();
 

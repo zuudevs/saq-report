@@ -114,8 +114,8 @@ Catatan: satu POST = satu suite Benchmark.js (±13 detik pada default server).
 Hitung total durasi ≈ jumlah request × durasi per request.`);
 }
 
-// Shuffle deterministik — pola yang sama dengan scripts/run-json-benchmark.js
-// agar urutan payload teracak tapi selalu dapat direproduksi.
+// Shuffle deterministik (LCG sederhana dengan seed tetap) agar urutan payload
+// teracak namun selalu dapat direproduksi antar-run.
 function shuffleDeterministically(items) {
     let seed = 0xC0FFEE;
     const shuffled = [...items];
