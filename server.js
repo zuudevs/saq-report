@@ -104,12 +104,12 @@ process.on('uncaughtException', (error) => {
 async function start() {
     await connectDB();
     await initRepositories();
-    
+
     server.listen(PORT, () => {
-        console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-        console.log(`📱 WhatsApp QR  : http://localhost:${PORT}/whatsapp/qr`);
-        console.log(`🤖 WA Dashboard : http://localhost:${PORT}/whatsapp`);
-        
+        console.log('🚀 Server berjalan di http://localhost:' + PORT);
+        console.log('📱 WhatsApp QR  : http://localhost:' + PORT + '/whatsapp/qr');
+        console.log('🤖 WA Dashboard : http://localhost:' + PORT + '/whatsapp');
+
         initializeClient();
     });
 }
