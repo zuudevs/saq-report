@@ -64,6 +64,8 @@ Opsi CLI:
 | `--sample-target-ms=MS` | `20` | Target durasi setiap batch measurement |
 | `--max-operations-per-sample=N` | `1000000` | Batas operasi untuk satu batch |
 | `--modes=LIST` | ketiga mode | Pilihan: `parse-only`, `file-read-parse`, `json-clone` |
+| `--device-label=LABEL` | `hostname` | Penanda device/site untuk run ini; menjadi prefiks `run_id` dan nama file hasil, sehingga hasil dari dua device tidak pernah sampai tumpang tindih |
+| `--gc-between` | off | Minta `gc()` antar fixture (butuh Node.js `--expose-gc`; tanpa itu dijalankan dengan peringatan) |
 
 `--out=benchmark/results/custom-run.json` menulis tepat ke file tersebut. Jika `--out` menunjuk direktori, nama file dibuat otomatis berdasarkan run ID.
 
@@ -88,24 +90,32 @@ Semua mode dijalankan sequential dengan concurrency 1. Waktu warm-up, kalibrasi 
 Per fixture dan mode:
 
 - `total_operations`, `total_elapsed_ns`
-- latency minimum, maksimum, mean, median/P50, P95, P99, dan population standard deviation
+- latency minimum, maksimum, mean, **mean_ci95_ns** (interval kepercayaan 95% atas mean, t-distribusi), median/P50, P95, P99, dan population standard deviation
 - throughput operations/sec dan MiB/sec
-- raw batch samples: operasi, elapsed ns, ns/op, ops/sec, MiB/sec
+- raw batch samples: operasi, **`started_at_delta_ms`** (waktu relatif awal mode — untuk melihat drift/throttle sepanjang run), elapsed ns, ns/op, ops/sec, MiB/sec
+
+Per fixture (seluruh mode):
+
+- `gc`: jumlah event GC dan total durasi pause selama measurement fixture tersebut
+- snapshot memory before/after
 
 Metadata run:
 
 - waktu mulai/selesai dan durasi
+- `environment.device_label` (CLI `--device-label`), `hostname`, `os_release`
+- `environment.machine_started` / `machine_finished`: model CPU, rentang kecepatan core (MHz), core logis, memori total/bebas, `loadavg`, dan pada Linux: governor cpufreq serta frekuensi aktual saat snapshot (indikasi turbo/throttle). Windows melaporkan `loadavg = [0,0,0]` (lihat `loadavg_note`).
+- `environment.node_flags` (`process.execArgv`), `environment.node_options_env` (`NODE_OPTIONS`), dan `runtime_versions` lengkap (`process.versions`) agar dua device harus lulus cek runtime yang sama
 - commit Git bila paket dijalankan di dalam working tree repository
-- versi Node.js/V8, platform, arsitektur, model CPU, logical cores
-- konfigurasi benchmark dan metode percentile
+- konfigurasi benchmark, metode percentile, stddev, CI, dan `measurement_scope` (mode yang sah jadi kutipan lintas-device)
 - snapshot heap, RSS, external memory, dan ArrayBuffer
+- `gc` run-level (jumlah event + total pause)
 - hash SHA-256, ukuran file, tipe root, dan ukuran input clone setiap fixture
 
-Persentil dihitung dengan metode nearest-rank atas `ns_per_operation` per batch. `stddev_ns` adalah population standard deviation dari nilai batch-normalized tersebut; bukan distribusi latency individual setiap operasi.
+Persentil dihitung dengan metode nearest-rank atas `ns_per_operation` per batch. `stddev_ns` adalah population standard deviation dari nilai batch-normalized tersebut; bukan distribusi latency individual setiap operasi. `mean_ci95_ns` memakai sample variance (n-1) dan kuantil t dua-sisi 0.975 yang dihitung dengan aproksimasi Wilson–Hilferty.
 
 ## Bentuk fixture dan source mapping
 
-Lihat `benchmark/fixture-manifest.json` untuk mapping tiap file. Secara ringkas:
+Lihat `manifest.json` yang berada di `$env:RAW/benchmark/saq-report/manifest.json` (di-generate oleh `generate-samples.js`) untuk mapping tiap file. Secara ringkas:
 
 | Grup | Variasi | Source utama |
 |---|---|---|
@@ -139,8 +149,13 @@ Hasil disimpan di `benchmark/results/`. Struktur utama:
 
 ```json
 {
-  "schema_version": "1.0.0",
-  "metadata": { "run_id": "...", "runtime": {}, "configuration": {} },
+  "schema_version": "1.1.0",
+  "metadata": {
+    "run_id": "...",
+    "runtime": {},
+    "environment": { "device_label": "...", "machine_started": {}, "machine_finished": {} },
+    "configuration": {}
+  },
   "dataset": { "files_discovered": 21, "files_valid": 21 },
   "summary": { "modes": {}, "by_group": {} },
   "results": [
@@ -148,6 +163,7 @@ Hasil disimpan di `benchmark/results/`. Struktur utama:
       "fixture_id": "persisted.schedules.assistant-ids-single",
       "payload": { "size_bytes": 0, "sha256": "..." },
       "measurements": { "parse-only": {}, "file-read-parse": {}, "json-clone": {} },
+      "gc": { "events": 0, "total_pause_ms": 0 },
       "memory": {}
     }
   ],
@@ -160,6 +176,27 @@ Nilai aktual menggantikan placeholder pada contoh. Raw samples disertakan pada t
 ## Membandingkan parser lain
 
 Untuk perbandingan yang adil, parser alternatif harus menerima byte/string yang sama dan mengeluarkan struktur hasil yang setara. Jalankan pada mesin, versi runtime, power mode, dan konfigurasi yang sama. Jangan membandingkan parse-only satu parser dengan file-read-parse parser lain. Gunakan SHA-256 fixture sebagai bukti input identik.
+
+## Protokol perbandingan lintas-device (device sendiri vs server SAQ)
+
+Angka lintas-device hanya valid bila kedua sisi menjalankan paket yang sama dengan prasyarat yang terverifikasi di dalam report:
+
+1. **Fixture identik.** SHA-256 tiap fixture (`payload.sha256`) harus sama di kedua report — generator deterministik menjamin ini, tetapi verifikasi tetap wajib sebelum membandingkan.
+2. **Runtime identik.** Node.js `major.minor` sama di kedua device; cek `metadata.environment.runtime_versions` dan `node_flags`/`node_options_env` — flag berbeda dapat mengubah angka tanpa jejak kode.
+3. **Device terandal.** Jalankan dengan `--device-label` berbeda (mis. `--device-label=saq-server` di server, `--device-label=<nama-laptop>` di device pengukur) supaya `run_id` dan nama file hasil tidak pernah bertabrakan.
+4. **Lingkungan terdokumentasi.** Bandingkan juga `environment.machine_started/finished`: governor, frekuensi aktual, `loadavg`, memori bebas. Server yang sedang sibuk atau sedang thermal-throttle menghasilkan angka menurun yang **bukan** kemampuan parser — angka itu harus dijelaskan dengan metadata, bukan diterima mentah.
+5. **Mode yang dikutip.** `parse-only` adalah satu-satunya mode yang layak jadi kutipan utama lintas-device (`measurement_scope.primary_cross_device`). `file-read-parse` bergantung OS page cache/disk (NVMe server vs laptop) dan `json-clone` bergantung karakteristik GC — keduanya ditandai `environment_sensitive`.
+6. **Statistik yang dikutip.** Bandingkan P50 (median) dan band-width CI95 (bukan standalone mean); rasio dua device disertai overlap/lebar interval-nya.
+7. **Kondisi eksekusi sama.** Sequential, warm-up dan parameter CLI sama di kedua sisi; juga `schema_version` report harus >= `1.1.0` di kedua sisi agar metadata environment tersedia.
+
+Workflow di server SAQ:
+
+```bash
+SAMPLE=<dir-sampel> RAW=<dir-artefak> node --expose-gc benchmark/benchmark-json.js \
+    --device-label=saq-server --out=$RAW/benchmark/saq-report
+```
+
+Hasil server lalu di-join-kan dengan report device pengembang pada kunci `fixture_id + mode + payload.sha256`; selain syarat itu dipenuhi, selisih angka **tidak boleh** dikutip sebagai perbedaan kemampuan.
 
 ## Sumber repository
 

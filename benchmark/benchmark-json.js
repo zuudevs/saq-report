@@ -9,18 +9,22 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
-const { performance } = require('node:perf_hooks');
+const { performance, PerformanceObserver } = require('node:perf_hooks');
 
 const ROOT = path.resolve(__dirname, '..');
-const SAMPLE_DIR = path.join(process.env.SAMPLE, 'saq-report');
-const MANIFEST_PATH = path.join(process.env.RAW, 'benchmark', 'saq-report', 'manifest.json');
+// Env kosong dibiarkan jadi '' agar modul tetap bisa di-load (jadi-keluar --help /
+// pesan error ramah di run(), bukan crash TypeError di top-level).
+const SAMPLE_DIR = path.join(process.env.SAMPLE ?? '', 'saq-report');
+const MANIFEST_PATH = path.join(process.env.RAW ?? '', 'benchmark', 'saq-report', 'manifest.json');
 const DEFAULTS = {
   input: SAMPLE_DIR,
-  out: path.join(process.env.RAW, 'benchmark', 'saq-report'),
+  out: path.join(process.env.RAW ?? '', 'benchmark', 'saq-report'),
   samples: 100,
   warmupMs: 100,
   sampleTargetMs: 20,
   maxOperationsPerSample: 1_000_000,
+  deviceLabel: os.hostname(),
+  gcBetween: false,
   modes: ['parse-only', 'file-read-parse', 'json-clone']
 };
 
@@ -29,6 +33,11 @@ function parseArgs(argv) {
   for (const arg of argv) {
     if (arg === '--help' || arg === '-h') {
       options.help = true;
+      continue;
+    }
+    if (arg === '--gc-between') {
+      // Boolean flag tanpa nilai: minta gc() dipanggil antar fixture.
+      options.gcBetween = true;
       continue;
     }
     const [rawKey, ...valueParts] = arg.replace(/^--/, '').split('=');
@@ -47,6 +56,11 @@ function parseArgs(argv) {
         if (!options.modes.length || options.modes.some((mode) => !allowed.has(mode))) {
           throw new Error(`--modes must be a comma-separated subset of: ${[...allowed].join(', ')}`);
         }
+        break;
+      }
+      case 'device-label': {
+        if (!value) throw new Error('--device-label must be a non-empty label');
+        options.deviceLabel = value;
         break;
       }
       default: throw new Error(`Unknown option: --${rawKey}`);
@@ -76,7 +90,7 @@ function printHelp() {
   console.log(`SAQ Report JSON Parser Benchmark
 
 Usage:
-  node scripts/benchmark-json.js [options]
+  node benchmark/benchmark-json.js [options]
 
 Options:
   --input=data/sample                Directory scanned recursively for .json files
@@ -87,12 +101,18 @@ Options:
   --max-operations-per-sample=1000000 Safety cap for operations in one batch
   --modes=parse-only,file-read-parse,json-clone
                                       Select one or more measurement modes
+  --device-label=LABEL              Device/site tag recorded in the report metadata
+                                      (default: hostname). Used as run-id prefix so
+                                      files from different devices never collide.
+  --gc-between                       Request gc() between fixtures (requires
+                                      Node.js --expose-gc; warns when unavailable)
   --help                             Show this help
 
 Examples:
-  node scripts/benchmark-json.js
-  node scripts/benchmark-json.js --samples=10 --warmup=50 --sample-target-ms=5
-  node scripts/benchmark-json.js --modes=parse-only,file-read-parse
+  node benchmark/benchmark-json.js
+  node benchmark/benchmark-json.js --samples=10 --warmup=50 --sample-target-ms=5
+  node benchmark/benchmark-json.js --modes=parse-only,file-read-parse
+  node benchmark/benchmark-json.js --device-label=saq-server
 `);
 }
 
@@ -148,6 +168,108 @@ function memorySnapshot() {
     rss: usage.rss,
     external: usage.external,
     array_buffers: usage.arrayBuffers
+  };
+}
+
+// Snapshot kondisi mesin pada satu titik. Detail CPU-governor/frekuensi saat-il
+// hanya pada Linux (/sys, /proc); field tertinggal null di macOS/Windows.
+function machineSnapshot() {
+  const cpus = os.cpus();
+  const speeds = cpus.map((cpu) => cpu.speed).filter(Boolean);
+  const snapshot = {
+    cpu_model: cpus[0]?.model || null,
+    cpu_speed_mhz_min: speeds.length ? Math.min(...speeds) : null,
+    cpu_speed_mhz_max: speeds.length ? Math.max(...speeds) : null,
+    logical_cores: cpus.length,
+    total_memory_bytes: os.totalmem(),
+    free_memory_bytes: os.freemem(),
+    loadavg: os.loadavg(),
+    cpu_governor: null,
+    cpu_current_freq_mhz_min: null,
+    cpu_current_freq_mhz_max: null,
+    cpu_current_freq_mhz_mean: null
+  };
+  if (process.platform === 'linux') {
+    try {
+      // Governor core 0 mewakili kebijakan frekuensi (umumnya seragam antar core).
+      const governorPath = '/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor';
+      if (fs.existsSync(governorPath)) {
+        snapshot.cpu_governor = fs.readFileSync(governorPath, 'utf8').trim();
+      }
+      // Frekuensi aktual saat snapshot (indikasi turbo/throttle) dari /proc/cpuinfo.
+      const cpuinfo = fs.readFileSync('/proc/cpuinfo', 'utf8');
+      const currentMhz = Array.from(cpuinfo.matchAll(/cpu MHz\s*:\s*([\d.]+)/g))
+        .map((match) => Number(match[1]))
+        .filter((value) => Number.isFinite(value));
+      if (currentMhz.length) {
+        snapshot.cpu_current_freq_mhz_min = Math.min(...currentMhz);
+        snapshot.cpu_current_freq_mhz_max = Math.max(...currentMhz);
+        snapshot.cpu_current_freq_mhz_mean =
+          currentMhz.reduce((sum, value) => sum + value, 0) / currentMhz.length;
+      }
+    } catch {
+      // Detail Linux tidak tersedia — field tetap null, bukan error.
+    }
+  }
+  return snapshot;
+}
+
+// Penghitung event GC (perf_hooks 'gc' entry): jumlah event + total durasi pause.
+// Delta antar snapshot digunakan untuk melampirkan beban GC ke tiap fixture.
+function createGcTracker() {
+  try {
+    const state = { events: 0, total_pause_ms: 0 };
+    const observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        state.events += 1;
+        state.total_pause_ms += entry.duration;
+      }
+    });
+    observer.observe({ entryTypes: ['gc'] });
+    return {
+      snapshot() {
+        return {
+          events: state.events,
+          total_pause_ms: Number(state.total_pause_ms.toFixed(3))
+        };
+      },
+      dispose() {
+        try { observer.disconnect(); } catch { /* noop */ }
+      }
+    };
+  } catch {
+    // Runtime tanpa entry 'gc' — tracker tidak tersedia, field jadi null.
+    return null;
+  }
+}
+
+// Kuantil t dua-sisi 0.975 via aproksimasi Wilson–Hilferty atas chi-square.
+// Akurasi > 1e-3 untuk df >= 5 — cukup untuk CI95 laporan benchmark.
+function tCritical975(df) {
+  if (df < 1) return null;
+  const chiSquare = df *
+    Math.pow(1 - 2 / (9 * df) + 1.959963984540054 * Math.sqrt(2 / (9 * df)), 3);
+  return 1.959963984540054 * Math.sqrt(df / chiSquare);
+}
+
+// CI95 untuk mean atas batch-normalized ns_per_operation.
+// memakai sample variance (n-1); stddev_ns pada stats memakai variance populasi
+// sesuai kontrak schema—keduanya dideklarasikan eksplisit dalam output.
+function confidenceInterval95(values, mean) {
+  const count = values.length;
+  if (count < 2) return null;
+  const sampleVariance =
+    values.reduce((sum, value) => sum + ((value - mean) ** 2), 0) / (count - 1);
+  const standardError = Math.sqrt(sampleVariance / count);
+  const t = tCritical975(count - 1);
+  if (!t) return null;
+  const halfWidth = t * standardError;
+  return {
+    low_ns: mean - halfWidth,
+    high_ns: mean + halfWidth,
+    half_width_ns: halfWidth,
+    confidence_level: 0.95,
+    method: 'mean ± t(0.975, n-1) * SE; sample variance; t via Wilson–Hilferty'
   };
 }
 
@@ -225,6 +347,7 @@ function calculateStats(samples, payloadBytes) {
       min_ns: values[0],
       max_ns: values[count - 1],
       mean_ns: mean,
+      mean_ci95_ns: confidenceInterval95(values, mean),
       median_ns: percentile(values, 0.50),
       p95_ns: percentile(values, 0.95),
       p99_ns: percentile(values, 0.99),
@@ -247,12 +370,15 @@ function measureMode(mode, context, options, payloadBytes) {
   runWarmup(mode, operationsPerSample, context, options.warmupMs);
 
   const samples = [];
+  const modeStartedAtMs = performance.now();
   for (let index = 0; index < options.samples; index += 1) {
+    const sampleStartedDeltaMs = performance.now() - modeStartedAtMs;
     const result = runBatch(mode, operationsPerSample, context);
     const seconds = result.elapsed_ns / 1e9;
     const bytes = payloadBytes * result.operations;
     samples.push({
       sample: index + 1,
+      started_at_delta_ms: Number(sampleStartedDeltaMs.toFixed(3)),
       operations: result.operations,
       elapsed_ns: result.elapsed_ns,
       ns_per_operation: result.ns_per_operation,
@@ -316,20 +442,30 @@ function run() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) return printHelp();
 
-  const inputDirectory = SAMPLE_DIR;
+  if (!process.env.SAMPLE || !process.env.RAW) {
+    throw new Error(
+      'Set SAMPLE and RAW environment variables first. Example (PowerShell): ' +
+      '$env:SAMPLE=<dir>; $env:RAW=<dir>; node benchmark/benchmark-json.js'
+    );
+  }
+
+  const inputDirectory = path.resolve(options.input);
   const files = walkJsonFiles(inputDirectory);
   if (!files.length) throw new Error(`No .json files found under ${inputDirectory}`);
   const fixtureManifest = loadFixtureManifest(inputDirectory);
+  const gcTracker = createGcTracker();
+  let gcMissingWarningShown = false;
 
   const startedAt = new Date();
   const startedMemory = memorySnapshot();
+  const machineStarted = machineSnapshot();
   const errors = [];
   const results = [];
   let validFixtures = 0;
   let totalPayloadBytes = 0;
 
-  console.log(`Found ${files.length} JSON fixture(s) in ${SAMPLE_DIR}.`);
-  console.log(`Modes: ${options.modes.join(', ')} | samples: ${SAMPLE_DIR} | target: ${options.sampleTargetMs} ms`);
+  console.log(`Found ${files.length} JSON fixture(s) in ${inputDirectory}.`);
+  console.log(`Device: ${options.deviceLabel} | Modes: ${options.modes.join(', ')} | samples: ${options.samples} | target: ${options.sampleTargetMs} ms`);
 
   for (const filePath of files) {
     const relativePath = path.relative(inputDirectory, filePath).split(path.sep).join('/');
@@ -374,6 +510,7 @@ function run() {
     const cloneBytes = Buffer.byteLength(cloneRaw, 'utf8');
     const context = { raw, filePath, fixture, cloneValue: repositoryValue };
     const memoryBefore = memorySnapshot();
+    const gcBefore = gcTracker ? gcTracker.snapshot() : null;
     const measurements = {};
 
     console.log(`  [RUN] ${relativePath} (${fileStats.size} bytes)`);
@@ -383,6 +520,7 @@ function run() {
         measurements[mode] = measureMode(mode, context, options, bytes);
       }
       const memoryAfter = memorySnapshot();
+      const gcAfter = gcTracker ? gcTracker.snapshot() : null;
       results.push({
         fixture_id: fixture.fixture_id,
         group: fixture.group,
@@ -402,6 +540,12 @@ function run() {
           behavior: fixture.source_behavior || null
         },
         measurements,
+        gc: gcAfter && gcBefore
+          ? {
+              events: gcAfter.events - gcBefore.events,
+              total_pause_ms: Number((gcAfter.total_pause_ms - gcBefore.total_pause_ms).toFixed(3))
+            }
+          : gcAfter,
         memory: {
           heap_used_before: memoryBefore.heap_used,
           heap_used_after: memoryAfter.heap_used,
@@ -435,12 +579,27 @@ function run() {
       });
       console.error(`  [ERROR] ${relativePath}: ${error.message}`);
     }
+
+    if (options.gcBetween) {
+      if (typeof global.gc === 'function') {
+        global.gc();
+      } else if (!gcMissingWarningShown) {
+        console.warn('  [WARN] --gc-between ignored: run with Node.js --expose-gc so gc() is available.');
+        gcMissingWarningShown = true;
+      }
+    }
   }
 
   const finishedAt = new Date();
   const finishedMemory = memorySnapshot();
+  const machineFinished = machineSnapshot();
   const successful = results.filter((result) => result.status === 'success');
-  const runId = `baseline-${startedAt.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)}`;
+  const gitCommit = getGitCommit();
+  // Run id: <device-label>-<timestamp ms>-<commit short> — unik lintas device,
+  // lintas commit, dan lintas detik eksekusi; sekaligus prefiks nama file output.
+  const labelSafe = String(options.deviceLabel).trim().replace(/[^a-zA-Z0-9._-]+/g, '-') || 'device';
+  const startedStamp = startedAt.toISOString().replace(/[-:.TZ]/g, '').slice(0, 17);
+  const runId = `${labelSafe}-${startedStamp}-${(gitCommit || 'nogit').slice(0, 8)}`;
   const summary = {
     total_fixtures: files.length,
     successful_fixtures: successful.length,
@@ -450,10 +609,10 @@ function run() {
     by_group: aggregateByGroup(successful, options.modes)
   };
   const report = {
-    schema_version: '1.0.0',
+    schema_version: '1.1.0',
     metadata: {
       benchmark_name: 'saq-report-json-baseline',
-      benchmark_version: '1.0.0',
+      benchmark_version: '1.1.0',
       run_id: runId,
       started_at: startedAt.toISOString(),
       finished_at: finishedAt.toISOString(),
@@ -461,7 +620,7 @@ function run() {
       source: {
         repository: 'https://github.com/zuudevs/saq-report',
         branch: 'main',
-        git_commit: getGitCommit()
+        git_commit: gitCommit
       },
       runtime: {
         runtime: 'Node.js',
@@ -472,6 +631,20 @@ function run() {
         cpu_model: os.cpus()[0]?.model || null,
         logical_cores: os.cpus().length,
         total_memory_bytes: os.totalmem()
+      },
+      environment: {
+        device_label: options.deviceLabel,
+        hostname: os.hostname(),
+        os_release: os.release(),
+        machine_started: machineStarted,
+        machine_finished: machineFinished,
+        // Windows mengembalikan [0,0,0] — disertakan untuk schema konsisten.
+        loadavg_note: process.platform === 'win32'
+          ? 'os.loadavg() is always [0,0,0] on Windows; use Process/Process Explorer externally.'
+          : null,
+        node_flags: process.execArgv,
+        node_options_env: process.env.NODE_OPTIONS || null,
+        runtime_versions: { ...process.versions }
       },
       parser: {
         name: 'JSON.parse',
@@ -485,10 +658,19 @@ function run() {
         samples: options.samples,
         sample_target_ms: options.sampleTargetMs,
         max_operations_per_sample: options.maxOperationsPerSample,
+        gc_between: options.gcBetween,
+        // Panduan konsumsi angka lintas-device: hanya parse-only yang layak
+        // menjadi kutipan utama; dua mode lain bergantung lingkungan runtime.
+        measurement_scope: {
+          primary_cross_device: 'parse-only',
+          environment_sensitive: ['file-read-parse', 'json-clone'],
+          comparison_join_keys: ['fixture_id', 'mode', 'payload.sha256']
+        },
         concurrency: 1,
         execution_mode: 'sequential',
         percentile_method: 'nearest-rank over batch-normalized ns_per_operation',
-        standard_deviation: 'population standard deviation over batch-normalized ns_per_operation'
+        standard_deviation: 'population standard deviation over batch-normalized ns_per_operation',
+        confidence_interval: '95% CI over batch-normalized ns_per_operation mean (t-distribution)'
       },
       process_memory: {
         heap_used_before: startedMemory.heap_used,
@@ -496,10 +678,12 @@ function run() {
         heap_used_delta: finishedMemory.heap_used - startedMemory.heap_used,
         rss_before: startedMemory.rss,
         rss_after: finishedMemory.rss
-      }
+      },
+      // Total GC events + pause seluruh run (delta per fixture ada di results[].gc).
+      gc: gcTracker ? gcTracker.snapshot() : null
     },
     dataset: {
-      directory: SAMPLE_DIR,
+      directory: inputDirectory,
       files_discovered: files.length,
       files_valid: validFixtures,
       files_invalid: files.length - validFixtures,
@@ -523,7 +707,8 @@ function run() {
     const aggregate = summary.modes[mode];
     console.log(`  ${mode}: ${aggregate.aggregate_operations_per_second?.toFixed(2) ?? 'n/a'} ops/sec`);
   }
-  console.log(`Report: ${outputPath}`);
+  console.log(`Report: ${outputPath} (schema 1.1.0, device: ${options.deviceLabel})`);
+  if (gcTracker) gcTracker.dispose();
   if (errors.length) process.exitCode = 1;
 }
 

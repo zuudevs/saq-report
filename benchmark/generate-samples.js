@@ -8,9 +8,18 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SAMPLE_DIR = path.join(process.env.SAMPLE, 'saq-report');
-const MANIFEST_PATH = path.join(process.env.RAW, 'benchmark', 'saq-report', 'manifest.json');
+const SAMPLE_DIR = path.join(process.env.SAMPLE ?? '', 'saq-report');
+const MANIFEST_PATH = path.join(process.env.RAW ?? '', 'benchmark', 'saq-report', 'manifest.json');
+const ROOT = path.resolve(__dirname, '..');
 const generated = [];
+
+function requireEnvironment() {
+  if (!process.env.SAMPLE || !process.env.RAW) {
+    throw new Error('Set SAMPLE and RAW environment variables first. Example (PowerShell): $env:SAMPLE=<dir>; $env:RAW=<dir>; node benchmark/generate-samples.js');
+  }
+}
+
+requireEnvironment();
 
 function writeFixture(relativePath, value, meta) {
   const absolutePath = path.join(SAMPLE_DIR, relativePath);

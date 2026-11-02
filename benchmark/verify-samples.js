@@ -3,8 +3,14 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const SAMPLE_DIR = path.join(process.env.SAMPLE, 'saq-report');
-const MANIFEST_PATH = path.join(process.env.RAW, 'benchmark', 'saq-report', 'manifest.json');
+const SAMPLE_DIR = path.join(process.env.SAMPLE ?? '', 'saq-report');
+const MANIFEST_PATH = path.join(process.env.RAW ?? '', 'benchmark', 'saq-report', 'manifest.json');
+
+function requireEnvironment() {
+  if (!process.env.SAMPLE || !process.env.RAW) {
+    throw new Error('Set SAMPLE and RAW environment variables first. Example (PowerShell): $env:SAMPLE=<dir>; $env:RAW=<dir>; node benchmark/verify-samples.js');
+  }
+}
 
 function collectJsonFiles(dir, prefix = '') {
   const collected = [];
@@ -22,6 +28,7 @@ function assert(condition, message) {
 }
 
 function main() {
+  requireEnvironment();
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'));
   const entries = manifest.fixtures;
   assert(Array.isArray(entries) && entries.length > 0, 'Manifest has no fixtures array.');
