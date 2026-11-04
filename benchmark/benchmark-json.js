@@ -14,8 +14,16 @@ const { performance, PerformanceObserver } = require('node:perf_hooks');
 const ROOT = path.resolve(__dirname, '..');
 // Env kosong dibiarkan jadi '' agar modul tetap bisa di-load (jadi-keluar --help /
 // pesan error ramah di run(), bukan crash TypeError di top-level).
-const SAMPLE_DIR = path.join(process.env.SAMPLE ?? '', 'saq-report');
+// Default input: AKAR $SAMPLE (korpus terpadu ze_json: JSON_checker + commons +
+// saq-report) — bukan hanya $SAMPLE/saq-report — agar baseline JSON.parse dan
+// benchmark ze_json mengukur korpus byte-sama (join per fixture sha256).
+const SAMPLE_DIR = process.env.SAMPLE ?? '';
+const SAQ_SAMPLE_DIR = path.join(process.env.SAMPLE ?? '', 'saq-report');
 const MANIFEST_PATH = path.join(process.env.RAW ?? '', 'benchmark', 'saq-report', 'manifest.json');
+// Guard OOM json-clone: fixture > 64 MB di-skip untuk mode json-clone saja
+// (jeopardy 152 MB = 2x objek JS di heap Node). parse-only & file-read-parse
+// tetap mengukur fixture besar. Tercatat jujur sebagai skipped di report.
+const JSON_CLONE_MAX_BYTES = 64 * 1024 * 1024;
 const DEFAULTS = {
   input: SAMPLE_DIR,
   out: path.join(process.env.RAW ?? '', 'benchmark', 'saq-report'),
@@ -141,7 +149,9 @@ function loadFixtureManifest(inputDirectory) {
   const entries = Array.isArray(parsed.fixtures) ? parsed.fixtures : [];
   const map = new Map();
   for (const entry of entries) {
-    map.set(path.resolve(inputDirectory, entry.path), entry);
+    // Path manifest relatif ke akar korpus saq-report sendiri — bukan ke
+    // --input (yang kini default ke akar $SAMPLE korpus terpadu).
+    map.set(path.resolve(SAQ_SAMPLE_DIR, entry.path), entry);
   }
   return map;
 }
@@ -410,7 +420,7 @@ function aggregateMode(results, mode) {
   let totalBytes = 0;
   for (const result of results) {
     const measurement = result.measurements?.[mode];
-    if (!measurement) continue;
+    if (!measurement || measurement.skipped) continue;
     totalOperations += measurement.total_operations;
     totalElapsedNs += measurement.total_elapsed_ns;
     totalBytes += measurement.throughput.data_processed_bytes;
@@ -484,6 +494,20 @@ function run() {
       fileStats = fs.statSync(filePath);
       parsed = JSON.parse(raw);
     } catch (error) {
+      // Korpus negatif JSON_checker (fail*.json) MEMANG wajib ditolak parser —
+      // bukan kegagalan benchmark. Catat sebagai skipped agar exit code tetap 0
+      // dan report tetap lolos audit (errors hanya utk kegagalan tak terduga).
+      if (/^JSON_checker\/fail/i.test(relativePath)) {
+        results.push({
+          fixture_id: fixture.fixture_id,
+          group: fixture.group,
+          file: relativePath,
+          status: 'skipped',
+          reason: 'korpus negatif JSON_checker (fail*) — wajib ditolak parser'
+        });
+        console.log(`  [SKIP-NEGATIVE] ${relativePath}`);
+        continue;
+      }
       const entry = {
         fixture_id: fixture.fixture_id,
         file: relativePath,
@@ -516,6 +540,14 @@ function run() {
     console.log(`  [RUN] ${relativePath} (${fileStats.size} bytes)`);
     try {
       for (const mode of options.modes) {
+        if (mode === 'json-clone' && fileStats.size > JSON_CLONE_MAX_BYTES) {
+          measurements[mode] = {
+            skipped: true,
+            reason: `fixture ${fileStats.size} bytes > guard ${JSON_CLONE_MAX_BYTES} bytes — json-clone di-skip (risiko OOM); parse-only & file-read-parse tetap diukur`
+          };
+          console.warn(`  [SKIP] ${relativePath}: json-clone dilewati (fixture > 64 MB)`);
+          continue;
+        }
         const bytes = mode === 'json-clone' ? cloneBytes : fileStats.size;
         measurements[mode] = measureMode(mode, context, options, bytes);
       }
@@ -594,6 +626,7 @@ function run() {
   const finishedMemory = memorySnapshot();
   const machineFinished = machineSnapshot();
   const successful = results.filter((result) => result.status === 'success');
+  const skippedNegative = results.filter((result) => result.status === 'skipped').length;
   const gitCommit = getGitCommit();
   // Run id: <device-label>-<timestamp ms>-<commit short> — unik lintas device,
   // lintas commit, dan lintas detik eksekusi; sekaligus prefiks nama file output.
@@ -603,7 +636,8 @@ function run() {
   const summary = {
     total_fixtures: files.length,
     successful_fixtures: successful.length,
-    failed_fixtures: results.length - successful.length,
+    skipped_negative_fixtures: skippedNegative,
+    failed_fixtures: results.filter((result) => result.status === 'error').length,
     total_operations_by_mode: Object.fromEntries(options.modes.map((mode) => [mode, aggregateMode(successful, mode).total_operations])),
     modes: Object.fromEntries(options.modes.map((mode) => [mode, aggregateMode(successful, mode)])),
     by_group: aggregateByGroup(successful, options.modes)
@@ -652,7 +686,7 @@ function run() {
         clone_implementation: 'JSON.parse(JSON.stringify(value))'
       },
       configuration: {
-        input_directory: SAMPLE_DIR,
+        input_directory: inputDirectory,
         modes: options.modes,
         warmup_ms: options.warmupMs,
         samples: options.samples,
@@ -687,6 +721,7 @@ function run() {
       files_discovered: files.length,
       files_valid: validFixtures,
       files_invalid: files.length - validFixtures,
+      files_skipped_negative: skippedNegative,
       total_size_bytes: totalPayloadBytes
     },
     summary,

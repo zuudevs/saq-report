@@ -36,7 +36,8 @@ node benchmark/generate-samples.js
 # Validasi fixture dan mapping manifest
 node benchmark/verify-samples.js
 
-# Benchmark default
+# Benchmark default — akar $SAMPLE (korpus terpadu ze_json:
+# JSON_checker + commons + saq-report; fail* tercatat skipped, bukan error)
 node benchmark/benchmark-json.js
 ```
 
@@ -57,8 +58,8 @@ Opsi CLI:
 
 | Opsi | Default | Fungsi |
 |---|---:|---|
-| `--input=DIR` | `data/sample` | Direktori input; dipindai rekursif untuk semua `.json` |
-| `--out=DIR` | `benchmark/results` | Direktori hasil atau path file `.json` eksplisit |
+| `--input=DIR` | `$SAMPLE` (akar korpus terpadu) | Direktori input; dipindai rekursif untuk semua `.json` |
+| `--out=DIR` | `$RAW/benchmark/saq-report` | Direktori hasil atau path file `.json` eksplisit |
 | `--samples=N` | `100` | Jumlah batch measurement per mode dan fixture |
 | `--warmup=MS` | `100` | Durasi warm-up per mode dan fixture |
 | `--sample-target-ms=MS` | `20` | Target durasi setiap batch measurement |
