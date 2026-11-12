@@ -51,6 +51,10 @@ class MongoJsonRepository {
         this._cache = undefined;
         this._cacheLoaded = false;
 
+        // Kandidat ND-6: bytes kanonik cache untuk readCount() jalur ze —
+        // dibangun lazy di _ensureCacheBytes(), di-invalidate saat write.
+        this._cacheBytes = null;
+
         // Menjaga urutan persist write agar tidak saling timpa.
         this._persistChain = Promise.resolve();
     }
@@ -104,8 +108,26 @@ class MongoJsonRepository {
             // Fallback aman sebelum init() dipanggil — parity dengan read().
             return this.seedRepo.readCount();
         }
-        const bytes = Buffer.from(JSON.stringify(this._cache));
-        return countJsonBytes(bytes, null);
+        return countJsonBytes(this._ensureCacheBytes(), null);
+    }
+
+    /**
+     * Bytes kanonik cache (hasil JSON.stringify sekali) untuk readCount().
+     * Kandidat optimasi ND-6 (satu perubahan per eksperimen): stringify
+     * dilakukan SEKALI per mutasi cache (seed/write), bukan sekali per
+     * readCount — menghilangkan 4×stringify (~88 KB) per request /rekap
+     * pada jalur ze. Bytes dibangun lazy + di-invalidate saat write;
+     * hasil identik dengan stringify-per-read (bytes kanonik dari cache
+     * yang sama) — parity diunci scripts/check-json-lazy-parity.js.
+     * Baseline read()/write() tidak berubah perilaku (hanya mutasi state
+     * internal baru).
+     * @returns {Buffer} bytes JSON cache saat ini
+     */
+    _ensureCacheBytes() {
+        if (this._cacheBytes === null) {
+            this._cacheBytes = Buffer.from(JSON.stringify(this._cache));
+        }
+        return this._cacheBytes;
     }
 
     write(data) {
@@ -113,6 +135,7 @@ class MongoJsonRepository {
         // tetap konsisten.
         this._cache = cloneJson(data);
         this._cacheLoaded = true;
+        this._cacheBytes = null; // invalidate bytes kanonik (rebuild lazy)
 
         // Persist async: tidak mengubah signature existing repo.write().
         const payload = cloneJson(data);
