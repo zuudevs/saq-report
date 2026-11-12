@@ -2,6 +2,7 @@
 
 const JsonRepository = require('./JsonRepository');
 const JsonStoreModel = require('../models/JsonStore');
+const { countJsonBytes } = require('./zeJsonBinding');
 
 let indexesReady = false;
 let indexesReadyPromise = null;
@@ -86,6 +87,25 @@ class MongoJsonRepository {
             return cloneJson(this.seedRepo.read());
         }
         return cloneJson(this._cache);
+    }
+
+    /**
+     * ND-5 (read-only lazy): nilai yang identik dengan `read().length`
+     * tanpa clone `JSON.parse(JSON.stringify())` — stringifikasi cache
+     * (satu pass) langsung dihitung strukturnya oleh ze_json.
+     * Cache Mongo adalah nilai UNWRAPPED (rootKey diterapkan saat seed),
+     * sehingga hitungan langsung ke root (rootKey=null).
+     * Baseline read()/write() tidak diubah; dipakai call-site opt-in
+     * (SAQ_JSON_ENGINE=ze). Parity diunci oleh scripts/check-json-lazy-parity.js.
+     * @returns {number|undefined} nilai `.length` aplikasi
+     */
+    readCount() {
+        if (!this._cacheLoaded) {
+            // Fallback aman sebelum init() dipanggil — parity dengan read().
+            return this.seedRepo.readCount();
+        }
+        const bytes = Buffer.from(JSON.stringify(this._cache));
+        return countJsonBytes(bytes, null);
     }
 
     write(data) {

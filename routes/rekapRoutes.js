@@ -23,7 +23,17 @@ const router = Router();
 
 // Halaman pilihan rekap
 router.get('/', asyncHandler(async (req, res) => {
-    const stats = {
+    // ND-5: jalur ze_json lazy read-only OPT-IN (baseline V8 = default,
+    // byte-identical). readCount() menghasilkan nilai yang sama dengan
+    // read().length tanpa clone penuh — parity diunci oleh
+    // scripts/check-json-lazy-parity.js (desain workspace §6.2).
+    const useZe = process.env.SAQ_JSON_ENGINE === 'ze';
+    const stats = useZe ? {
+        totalCourses:    courseRepo.readCount(),
+        totalAssistants: assistantRepo.readCount(),
+        totalSchedules:  scheduleRepo.readCount(),
+        totalReports:    reportRepo.readCount(),
+    } : {
         totalCourses:    courseRepo.read().length,
         totalAssistants: assistantRepo.read().length,
         totalSchedules:  scheduleRepo.read().length,

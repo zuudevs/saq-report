@@ -1,5 +1,6 @@
 const fs   = require('fs');
 const AppError = require('../config/AppError');
+const { countJsonBytes, valueLength } = require('./zeJsonBinding');
 
 /**
  * Generic repository untuk baca/tulis file JSON.
@@ -33,6 +34,51 @@ class JsonRepository {
                 return this.defaultValue;
             }
             // File ada tapi corrupt atau permission issue
+            throw new AppError(
+                `Gagal membaca ${this.filePath}: ${err.message}`,
+                500
+            );
+        }
+    }
+
+    /**
+     * ND-5 (read-only lazy): nilai yang identik dengan `read().length`
+     * tanpa materialisasi penuh dokumen (structural count via ze_json).
+     * Jalur ze_json opt-in — dipakai call-site dengan SAQ_JSON_ENGINE=ze;
+     * baseline read() tidak diubah. Parity diunci oleh
+     * scripts/check-json-lazy-parity.js.
+     * @returns {number|undefined} nilai `.length` aplikasi
+     * @throws {AppError} JSON corrupt (kontrak sama dengan read())
+     * @throws {TypeError} parity `.length` pada default null/undefined atau
+     *                     root null tanpa rootKey (identik baseline caller)
+     */
+    readCount() {
+        let raw;
+        try {
+            raw = fs.readFileSync(this.filePath); // Buffer — bytes asli untuk ze_json
+        } catch (err) {
+            if (err.code === 'ENOENT') {
+                // Parity: baseline read() mengembalikan defaultValue lalu
+                // caller memanggil .length — replikasi lewat helper.
+                return valueLength(this.defaultValue);
+            }
+            throw new AppError(
+                `Gagal membaca ${this.filePath}: ${err.message}`,
+                500
+            );
+        }
+        try {
+            return countJsonBytes(raw, this.rootKey, this.defaultValue);
+        } catch (err) {
+            // Parity LOKASI error (bukan hanya jenis):
+            //  - Dengan rootKey: TypeError `json[rootKey]` pada root null
+            //    terjadi DI DALAM read() baseline (try/catch) -> AppError 500.
+            //  - Tanpa rootKey: TypeError `.length` pada root null terjadi
+            //    di CALL-SITE (di luar read()) -> diteruskan apa adanya.
+            if (this.rootKey === null && err instanceof TypeError) {
+                throw err;
+            }
+            // JSON corrupt: kontrak error sama dengan read() (AppError 500).
             throw new AppError(
                 `Gagal membaca ${this.filePath}: ${err.message}`,
                 500
