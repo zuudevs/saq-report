@@ -26,6 +26,12 @@ const PATHS   = require('./config/paths');
 // ─── Middleware ───────────────────────────────────────────────────────────────
 const { multerErrorHandler, globalErrorHandler } = require('./middleware/errorHandler');
 
+// ND-11 (Phase E, ukur HTTP end-to-end): gate boot-level untuk mematikan
+// klien WhatsApp (puppeteer headless) + cron reminder saat instance hanya
+// dipakai pengukuran. Handler/route/template TIDAK diubah — boundary
+// `/rekap` identik dengan produksi (bukan perubahan perilaku aplikasi).
+const WA_BOOT_DISABLED = process.env.SAQ_DISABLE_WHATSAPP === '1';
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 const dashboardRoutes  = require('./routes/dashboardRoutes');
 const asistenRoutes    = require('./routes/asistenRoutes');
@@ -84,7 +90,9 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use(multerErrorHandler);
 app.use(globalErrorHandler);
 
-initDailyReminders();
+if (!WA_BOOT_DISABLED) {
+    initDailyReminders();
+}
 
 // ─── Process-level Error Handlers ────────────────────────────────────────────
 process.on('unhandledRejection', (reason) => {
@@ -107,10 +115,14 @@ async function start() {
     
     server.listen(PORT, () => {
         console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-        console.log(`📱 WhatsApp QR  : http://localhost:${PORT}/whatsapp/qr`);
-        console.log(`🤖 WA Dashboard : http://localhost:${PORT}/whatsapp`);
-        
-        initializeClient();
+        if (WA_BOOT_DISABLED) {
+            console.log('📴 WhatsApp/cron boot dimatikan (SAQ_DISABLE_WHATSAPP=1) — mode pengukuran ND-11.');
+        } else {
+            console.log(`📱 WhatsApp QR  : http://localhost:${PORT}/whatsapp/qr`);
+            console.log(`🤖 WA Dashboard : http://localhost:${PORT}/whatsapp`);
+
+            initializeClient();
+        }
     });
 }
 
