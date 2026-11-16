@@ -113,7 +113,11 @@ async function start() {
     await connectDB();
     await initRepositories();
     
-    server.listen(PORT, () => {
+    // SAQ_BIND_HOST (opsional, boot-level — knob ND-11 koeksistensi):
+    // batasi interface listen untuk instance benchmark (127.0.0.1) agar
+    // tidak reachable dari jaringan. Produksi: env absen → undefined →
+    // perilaku eksisting (semua interface) TIDAK berubah.
+    server.listen(PORT, process.env.SAQ_BIND_HOST || undefined, () => {
         console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
         if (WA_BOOT_DISABLED) {
             console.log('📴 WhatsApp/cron boot dimatikan (SAQ_DISABLE_WHATSAPP=1) — mode pengukuran ND-11.');
